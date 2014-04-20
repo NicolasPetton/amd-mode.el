@@ -4,8 +4,11 @@
 
   Copyright (C) 2014 Nicolas Petton
 
-  amd-mode provides convenience methods and keybindings for handling
+  amd-mode.el provides convenience methods and keybindings for handling
   AMD module definitions.
+
+  amd-mode.el works with [[https://github.com/mooz/js2-mode][js2-mode]] and (at the moment) requires to be
+  with a [[https://github.com/bbatsov/projectile][projectile]] project.
  
 - C-c C-d k: `amd-kill-buffer-path': Kill the path of the buffer's
   file without its extension.

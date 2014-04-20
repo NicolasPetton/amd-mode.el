@@ -1,9 +1,9 @@
-;;; amd-mode.el --- Convenience minor mode for handling AMD module requirements.
+;;; amd-mode.el --- Minor mode for handling JavaScript AMD module requirements.
 
 ;; Copyright (C) 2014  Nicolas Petton
 
 ;; Author: Nicolas Petton(require 'projectile) <petton.nicolas@gmail.com>
-;; Keywords: javascript, amd
+;; Keywords: javascript, amd, projectile
 ;; Version: 0.4
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -16,9 +16,12 @@
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
 
-;;; Commentary:
-;; amd-mode provides convenience methods and keybindings for handling
+;; ;;; Commentary:
+;; amd-mode.el provides convenience methods and keybindings for handling
 ;; AMD module definitions.
+;;
+;; amd-mode.el works with js2-mode and (at the moment) requires to be
+;; with a projectile project.
 ;; 
 ;; C-c C-d k: `amd-kill-buffer-path': Kill the path of the buffer's
 ;; file without its extension.
