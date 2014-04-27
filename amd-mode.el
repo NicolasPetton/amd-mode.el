@@ -29,12 +29,12 @@
 ;; C-c C-d s: `amd-search-references': Search for modules that require
 ;; the buffer's file.
 ;;
-;; C-c C-d a: `amd-import': Prompt for a file to import.
+;; C-c C-d i: `amd-import': Prompt for a file to import.
 ;;
 ;; C-c C-d o: `amd-find-module-at-point': Find a module named after
 ;; the node at point.
 ;;
-;; C-c C-d i: `amd-auto-insert': Insert an empty module definition.
+;; C-c C-d a: `amd-auto-insert': Insert an empty module definition.
 ;;
 ;; C-S-up: reorder the imported modules or perform
 ;; `js2r-move-line-up`.
@@ -330,12 +330,12 @@ buffer file."
 	  (actions
 	   ("Dependencies"
             ("k" "Kill buffer module" amd-kill-buffer-module)
-            ("a" "Import module" amd-import))
+            ("i" "Import module" amd-import))
            ("Search"
             ("o" "Find module at point" amd-find-module-at-point)
             ("s" "Search references" amd-search-references))
            ("Auto insert"
-            ("i" "Auto insert" amd-auto-insert))))))
+            ("a" "Auto insert" amd-auto-insert))))))
   (makey-key-mode-popup-amd))
 
 (define-key amd-mode-map (kbd "C-c C-d") #'amd-initialize-makey-group)

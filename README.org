@@ -14,10 +14,10 @@
   file without its extension.
 - C-c C-d s: `amd-search-references': Search for modules that require
   the buffer's file.
-- C-c C-d a: `amd-import': Prompt for a file to import.
+- C-c C-d i: `amd-import': Prompt for a file to import.
 - C-c C-d o: `amd-find-module-at-point': Find a module named after
   the node at point.
-- C-c C-d i: `amd-auto-insert': Insert an empty module definition.
+- C-c C-d a: `amd-auto-insert': Insert an empty module definition.
 - C-S-up: reorder the imported modules or perform
   `js2r-move-line-up'.
 - C-S-down: reorder the imported modules or perform
