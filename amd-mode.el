@@ -144,11 +144,6 @@ Always perform `js2r-move-line-down'."
   (if (amd--inside-imports-p)
       (amd--move-module-down)))
 
-(defun amd-move-line-down-twice ()
-  (interactive)
-  (amd-move-line-down)
-  (amd-move-line-down))
-
 (defun amd--guard ()
   "Throw an error when not in a projectile project."
   (unless (projectile-project-p)
