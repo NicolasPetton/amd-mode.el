@@ -10,12 +10,11 @@
   amd-mode.el works with [[https://github.com/mooz/js2-mode][js2-mode]] and (at the moment) requires to be
   with a [[https://github.com/bbatsov/projectile][projectile]] project.
  
-- C-c C-d k: `amd-kill-buffer-path': Kill the path of the buffer's
+- C-c C-d k: `amd-kill-buffer-module': Kill the path of the buffer's
   file without its extension.
 - C-c C-d s: `amd-search-references': Search for modules that require
   the buffer's file.
-- C-c C-d a: `amd-add-dependency': Prompt for a file to add as a
-  dependency.
+- C-c C-d a: `amd-import': Prompt for a file to import.
 - C-c C-d o: `amd-find-module-at-point': Find a module named after
   the node at point.
 - C-c C-d i: `amd-auto-insert': Insert an empty module definition.
@@ -24,7 +23,7 @@
 - C-S-down: reorder the imported modules or perform
   `js2r-move-line-down'.
   
-  When `amd-use-relative-file-name' is set to `T', modules are
-  imported using relative paths when the imported module is in a
-  subdirectory or in the same directory as the current buffer
-  file.
+When `amd-use-relative-file-name' is set to `T', modules are
+imported using relative paths when the imported module is in a
+subdirectory or in the same directory as the current buffer
+file.
