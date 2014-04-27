@@ -23,19 +23,29 @@
 ;; amd-mode.el works with js2-mode and (at the moment) requires to be
 ;; with a projectile project.
 ;; 
-;; C-c C-d k: `amd-kill-buffer-path': Kill the path of the buffer's
-;; file without its extension.
+;; C-c C-d k: `amd-kill-buffer-module': Kill the module path of the
+;; buffer's file.
 ;;
 ;; C-c C-d s: `amd-search-references': Search for modules that require
 ;; the buffer's file.
 ;;
-;; C-c C-d a: `amd-add-dependency': Prompt for a file to add as a
-;; dependency.
+;; C-c C-d a: `amd-import': Prompt for a file to import.
 ;;
 ;; C-c C-d o: `amd-find-module-at-point': Find a module named after
 ;; the node at point.
 ;;
 ;; C-c C-d i: `amd-auto-insert': Insert an empty module definition.
+;;
+;; C-S-up: reorder the imported modules or perform
+;; `js2r-move-line-up`.
+;; 
+;; C-S-down: reorder the imported modules or perform
+;; `js2r-move-line-down`.
+;; 
+;; When `amd-use-relative-file-name` is set to `T', modules are
+;; imported using relative paths when the imported module is in a
+;; subdirectory or in the same directory as the current buffer
+;; file.
 
 
 ;;; Code:
@@ -46,6 +56,15 @@
 (require 's)
 (require 'dash)
 
+(defcustom amd-use-relative-file-name nil 
+  "Use relative file names for new module imports.
+
+Relative file names are only used if the module is in a
+subdirectory or in the same directory as the current buffer
+file."
+  :group 'amd-mode
+  :type 'boolean)
+
 (defvar amd-mode-map 
   (make-sparse-keymap)
   "Keymap for amd-mode")
@@ -55,17 +74,18 @@
   :lighter " AMD"
   :keymap amd-mode-map)
 
-(defun amd-kill-buffer-path ()
-  "Kill the path of the buffer's file without its extension.
-The path is relative to the current projectile project."
+(defun amd-kill-buffer-module ()
+  "Kill the module path of the buffer's file.
+The path is relative to the current projectile project root
+directory."
   (interactive)
   (amd--guard)
   (kill-new (concat "'"
-                    (amd--buffer-file-name-sans-extension)
+                    (amd--buffer-module)
                     "'")))
 
 (defun amd-search-references ()
-  "Find amd references of the buffer's file in the current
+  "Find amd references of the buffer's module in the current
 project."
   (interactive)
   (amd--guard)
@@ -77,12 +97,12 @@ project."
                    "['|\"]")))
 
 (defun amd-find-module-at-point ()
-  "When on a node, find file at point represented by the
-content of the node."
+  "When on a node, find the module file at point represented by
+the content of the node."
   (interactive)
   (amd--guard)
   (let* ((current-node (js2-node-at-point))
-         (string-contents (amd--node-contents current-node))
+         (string-contents (amd--node-content current-node))
          (name (s-replace-all '(("'" . "") ("\"" "")) string-contents)))
     (amd--find-file-matching name)))
 
@@ -97,40 +117,99 @@ content of the node."
   (backward-char 3)
   (js2-indent-line))
 
-(defun amd-add-dependency ()
+(defun amd-import ()
   "Prompt for a file and insert it as a dependency. Also appends
 the filename to the modules list."
   (interactive)
   (amd--guard)
   (save-excursion
     (let ((file (projectile-completing-read 
-                 "Add dependency: " 
+                 "Import: " 
                  (projectile-current-project-files))))
-      (amd--add-file-dependency file))))
+      (amd--import file))))
 
+(defun amd-move-line-up ()
+  (interactive)
+  "When inside the import array, move up the module at point.
+Always perform `js2r-move-line-up'."
+  (js2r-move-line-up)
+  (when (amd--inside-imports-p)
+    (amd--move-module-up)))
+
+(defun amd-move-line-down ()
+  (interactive)
+  "When inside the import array, move down the module at point.
+Always perform `js2r-move-line-down'."
+  (js2r-move-line-down)
+  (if (amd--inside-imports-p)
+      (amd--move-module-down)))
+
+(defun amd-move-line-down-twice ()
+  (interactive)
+  (amd-move-line-down)
+  (amd-move-line-down))
 
 (defun amd--guard ()
-  "Throw an error when not in a projectile project"
+  "Throw an error when not in a projectile project."
   (unless (projectile-project-p)
     (error "Not within a project")))
 
-(defun amd--add-file-dependency (file)
-  "Insert FILE as a AMD dependency. Also appends the file-name of
+(defun amd--move-module-up ()
+  (amd--move-module -1))
+
+(defun amd--move-module-down ()
+  (amd--move-module 1))
+
+(defun amd--move-module (offset)
+  (let* ((current-node (js2-node-at-point))
+         (function-node (amd--define-function-node))
+         (params (amd--function-node-params function-node))
+         (names (amd--function-node-params function-node))
+         (position (js2-position current-node 
+                                 (js2-array-node-elems (js2-node-parent current-node))))
+         (module-to-move (nth (- position offset) names)))
+    (setf (nth (- position offset) names) (nth position names))
+    (setf (nth position names) module-to-move)
+    (amd--set-function-params function-node names)))
+
+(defun amd--delete-function-params (node)
+  (save-excursion
+    (goto-char (js2-node-abs-pos node))
+    (let ((beg (search-forward "("))
+          (end (- (search-forward ")") 1)))
+      (delete-region beg end))))
+
+(defun amd--set-function-params (node params)
+  (amd--delete-function-params node)
+  (save-excursion
+    (goto-char (js2-node-abs-pos node))
+    (search-forward "(")
+    (insert (car params))
+    (dolist (param (cdr params))
+      (insert ", ")
+      (insert param))))
+
+(defun amd--define-function-node ()
+  (save-excursion
+    (js2-node-at-point (amd--goto-define-function))))
+
+(defun amd--import (file)
+  "Insert FILE as a AMD module dependency. Also appends the module name of
 FILE to the modules list."
   (amd--insert-module-name file)
   (amd--insert-dependency file))
 
 (defun amd--insert-dependency (file)
-  (amd--goto-define-dependencies)
+  (amd--goto-imports)
   (insert (concat "'"
-                  (amd--file-path file)
+                  (amd--module file)
                   "'"))
   (js2-indent-line))
 
 (defun amd--insert-module-name (file)
   (let ((module-name (file-name-nondirectory 
                       (file-name-sans-extension file))))
-    (amd--goto-define-function)
+    (amd--goto-define-function-params)
     (search-forward ")")
     (backward-char 1)
     (unless (looking-back "(")
@@ -141,11 +220,15 @@ FILE to the modules list."
   (goto-char (point-min))
   (search-forward "define("))
 
-(defun amd--goto-define-function ()
+(defun amd--goto-define-function-params ()
   (amd--goto-define)
   (search-forward "function("))
 
-(defun amd--goto-define-dependencies ()
+(defun amd--goto-define-function ()
+  (amd--goto-define-function-params)
+  (search-backward "function("))
+
+(defun amd--goto-imports ()
   (amd--goto-define)
   (let* ((current-node (js2-node-at-point))
          (last-child (js2-node-last-child current-node)))
@@ -165,13 +248,23 @@ FILE to the modules list."
 project."
   (amd--file-name (buffer-file-name)))
 
-(defun amd--buffer-file-name-sans-extension ()
-  (amd--file-path (buffer-file-name)))
+(defun amd--buffer-module ()
+  (amd--module (buffer-file-name)))
 
-(defun amd--node-contents (node)
+(defun amd--node-content (node)
   (let* ((beg (js2-node-abs-pos node))
          (end (+ beg (js2-node-len node))))
     (buffer-substring beg end)))
+
+;; Using `js2-function-node-params' does not always work when the file
+;; has not been fully parsed yet.
+(defun amd--function-node-params (node)
+  (save-excursion
+    (goto-char (js2-node-abs-pos node))
+    (let ((beg (search-forward "("))
+          (end (- (search-forward ")") 1)))
+      (mapcar #'s-trim 
+              (split-string (buffer-substring beg end) ",")))))
 
 (defun amd--find-file-matching (name)
   "Prompt for a file matching NAME in the project.
@@ -189,12 +282,49 @@ Note: This function is mostly a copy/paste from
            (projectile-current-project-files)))
 
 (defun amd--file-name (file)
-  "Return the name of FILE relative to the project"
-  (s-chop-prefix (projectile-project-root)
-                 file))
+  "Return the name of FILE relative to the project or the current
+buffer file."
+  (if (amd--use-relative-file-name-p file)
+      (amd--relative-file-name file)
+    (amd--project-file-name file)))
 
-(defun amd--file-path (file)
+(defun amd--relative-file-name (file)
+  "Return the name of FILE relative to the current buffer file."
+  (let* ((prefix (amd--buffer-directory)))
+    (concat "./" (file-relative-name file prefix))))
+
+(defun amd--project-file-name (file)
+  "Return the name of FILE relative to the project."
+  (file-relative-name file (projectile-project-root)))
+
+(defun amd--module (file)
+  "Return the module path for FILE."
   (file-name-sans-extension (amd--file-name file)))
+
+(defun amd--buffer-directory ()
+  (file-name-directory (amd--buffer-file-name)))
+
+(defun amd--use-relative-file-name-p (file)
+  "Return T if the relative file name of FILE should be used."
+  (if (string= file (buffer-file-name))
+      nil
+    (and amd-use-relative-file-name
+         (s-prefix-p (amd--buffer-directory)
+                     file))))
+
+(defun amd--inside-imports-p ()
+  (amd--imports-node-p (js2-node-at-point)))
+
+(defun amd--imports-node-p (node)
+  (let* ((imports-node (js2-node-parent node))
+         (define-node (js2-node-parent imports-node)))
+    (and (js2-array-node-p imports-node)
+         (amd--define-node-p define-node))))
+
+(defun amd--define-node-p (node)
+  (let ((target (js2-call-node-target node)))
+   (and (js2-call-node-p node)
+        (string= (js2-name-node-name target) "define"))))
 
 
 (defun amd-initialize-makey-group () 
@@ -204,8 +334,8 @@ Note: This function is mostly a copy/paste from
 	  (description "AMD module helpers")
 	  (actions
 	   ("Dependencies"
-            ("k" "Kill buffer path" amd-kill-buffer-path)
-            ("a" "Add dependency" amd-add-dependency))
+            ("k" "Kill buffer module" amd-kill-buffer-module)
+            ("a" "Import module" amd-import))
            ("Search"
             ("o" "Find module at point" amd-find-module-at-point)
             ("s" "Search references" amd-search-references))
@@ -214,6 +344,10 @@ Note: This function is mostly a copy/paste from
   (makey-key-mode-popup-amd))
 
 (define-key amd-mode-map (kbd "C-c C-d") #'amd-initialize-makey-group)
+(define-key amd-mode-map (kbd "<C-S-up>") #'amd-move-line-up)
+(define-key amd-mode-map (kbd "<C-S-down>") #'amd-move-line-down)
+
+
 
 (provide 'amd-mode)
 ;;; amd-mode.el ends here
