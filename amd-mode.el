@@ -1,10 +1,12 @@
 ;;; amd-mode.el --- Minor mode for handling JavaScript AMD module requirements.
 
 ;; Copyright (C) 2014  Nicolas Petton
-
+;;
 ;; Author: Nicolas Petton(require 'projectile) <petton.nicolas@gmail.com>
 ;; Keywords: javascript, amd, projectile
 ;; Version: 0.4
+;; Package: gnome-calendar
+;; Package-Requires: ((projectile "20140114.831") (s "20131223.944") (dash "20140103.1339") (makey "20131231.630") (js2-mode "20140405.2057") (js2-refactor "20140320.2"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -51,6 +53,7 @@
 ;;; Code:
 
 (require 'js2-mode)
+(require 'js2-refactor)
 (require 'projectile)
 (require 'makey)
 (require 's)
