@@ -1,6 +1,6 @@
 * amd-mode.el [[https://travis-ci.org/NicolasPetton/amd-mode.el][https://travis-ci.org/NicolasPetton/amd-mode.el.svg]]
   
-  Minor mode for JavaScript handling AMD module requirements.
+  Minor mode for handling JavaScript AMD module requirements.
 
   Copyright (C) 2014 Nicolas Petton
 
