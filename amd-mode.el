@@ -6,7 +6,7 @@
 ;; Keywords: javascript, amd, projectile
 ;; Version: 0.4
 ;; Package: gnome-calendar
-;; Package-Requires: ((projectile "20140114.831") (s "20131223.944") (dash "20140103.1339") (makey "20131231.630") (js2-mode "20140405.2057") (js2-refactor "20140320.2"))
+;; Package-Requires: ((projectile "0.10.0") (s "1.9.0") (dash "2.5.0") (makey "0.3") (js2-mode "20140114") (js2-refactor "0.6.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
