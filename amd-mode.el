@@ -220,7 +220,7 @@ FILE to the modules list."
 
 (defun amd--goto-define-function-params ()
   (amd--goto-define)
-  (search-forward "function"))
+  (search-forward "("))
 
 (defun amd--goto-define-function ()
   (amd--goto-define-function-params)
