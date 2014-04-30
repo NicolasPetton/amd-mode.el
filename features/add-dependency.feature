@@ -5,13 +5,24 @@ Feature: Add module dependency
     And I turn on amd-mode
     And I press "C-c C-d a"
 
-  Scenario:
-    When I press "C-c C-d i test-files/foo.js"
+  Scenario: Add a file
+    When I press "C-c C-d f test-files/foo.js"
     Then I should see:
     """
     define([
         'test-files/foo'
     ], function(foo){
+    
+    });
+    """
+
+  Scenario: Add a module name
+    When I press "C-c C-d m module/name"
+    Then I should see:
+    """
+    define([
+        'module/name'
+    ], function(name){
     
     });
     """

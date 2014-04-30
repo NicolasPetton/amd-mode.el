@@ -8,6 +8,7 @@
 (depends-on "js2-refactor")
 (depends-on "projectile")
 (depends-on "s")
+(depends-on "f")
 
 (development
  (depends-on "ecukes")

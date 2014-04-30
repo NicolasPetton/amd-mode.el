@@ -4,9 +4,9 @@
 ;;
 ;; Author: Nicolas Petton(require 'projectile) <petton.nicolas@gmail.com>
 ;; Keywords: javascript, amd, projectile
-;; Version: 0.4
-;; Package: gnome-calendar
-;; Package-Requires: ((projectile "0.10.0") (s "1.9.0") (dash "2.5.0") (makey "0.3") (js2-mode "20140114") (js2-refactor "0.6.1"))
+;; Version: 0.5
+;; Package: amd-mode
+;; Package-Requires: ((projectile "0.10.0") (s "1.9.0") (f "0.16.2") (dash "2.5.0") (makey "0.3") (js2-mode "20140114") (js2-refactor "0.6.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -31,7 +31,12 @@
 ;; C-c C-d s: `amd-search-references': Search for modules that require
 ;; the buffer's file.
 ;;
-;; C-c C-d i: `amd-import': Prompt for a file to import.
+;; C-c C-d f: `amd-import-file': Prompt for a file to import. When
+;; called with a prefix argument, always insert the relative path of
+;; the file.
+
+;; C-c C-d m: `amd-import-module': Prompt for a module name to
+;; import.
 ;;
 ;; C-c C-d o: `amd-find-module-at-point': Find a module named after
 ;; the node at point.
@@ -44,8 +49,8 @@
 ;; C-S-down: reorder the imported modules or perform
 ;; `js2r-move-line-down`.
 ;; 
-;; When `amd-use-relative-file-name` is set to `T', modules are
-;; imported using relative paths when the imported module is in a
+;; When `amd-use-relative-file-name` is set to `T', files are
+;; imported using relative paths when the imported file is in a
 ;; subdirectory or in the same directory as the current buffer
 ;; file.
 
@@ -57,6 +62,7 @@
 (require 'projectile)
 (require 'makey)
 (require 's)
+(require 'f)
 (require 'dash)
 
 (defcustom amd-use-relative-file-name nil 
@@ -120,16 +126,23 @@ the content of the node."
   (backward-char 3)
   (js2-indent-line))
 
-(defun amd-import ()
+(defun amd-import-file (&optional arg)
   "Prompt for a file and insert it as a dependency. Also appends
 the filename to the modules list."
-  (interactive)
+  (interactive "P")
   (amd--guard)
   (save-excursion
     (let ((file (projectile-completing-read 
-                 "Import: " 
+                 "Import file: " 
                  (projectile-current-project-files))))
-      (amd--import file))))
+      (amd--import file arg))))
+
+(defun amd-import-module (module)
+  "Prompt for MODULE and insert it as a dependency. Also
+ append it to the modules list."
+  (interactive "sImport module name: ")
+  (amd--guard)
+  (amd--import module))
 
 (defun amd-move-line-up ()
   (interactive)
@@ -191,28 +204,41 @@ Always perform `js2r-move-line-down'."
   (save-excursion
     (js2-node-at-point (amd--goto-define-function))))
 
-(defun amd--import (file)
-  "Insert FILE as a AMD module dependency. Also appends the module name of
-FILE to the modules list."
-  (amd--insert-module-name file)
-  (amd--insert-dependency file))
+(defun amd--import (file-or-name &optional relative)
+  "Insert FILE-OR-NAME as a AMD module dependency. Also append it
+ to the modules list."
+  (amd--insert-module-name file-or-name)
+  (amd--insert-dependency file-or-name relative))
 
-(defun amd--insert-dependency (file)
+(defun amd--insert-dependency (file-or-name &optional relative)
+  "Insert FILE-OR-NAME as a dependency in the imports array.
+
+If FILE-OR-NAME is a file and RELATIVE is T, insert the relative
+path of FILE-OR-NAME, independently of the value of
+AMD-USE-RELATIVE-FILE-NAME."
   (amd--goto-imports)
   (insert (concat "'"
-                  (amd--module file)
+                  (amd--module file-or-name relative)
                   "'"))
   (js2-indent-line))
 
 (defun amd--insert-module-name (file)
-  (let ((module-name (file-name-nondirectory 
-                      (file-name-sans-extension file))))
+  (let* ((default-module-name (amd--module-name file))
+         (module-name (read-string (concat "Import as (" 
+                                           default-module-name 
+                                           "): "))))
     (amd--goto-define-function-params)
     (search-forward ")")
     (backward-char 1)
     (unless (looking-back "(")
       (insert ", "))      
-    (insert module-name)))
+    (insert (if (string= "" module-name) 
+                default-module-name
+              module-name))))
+
+(defun amd--module-name (file)
+  (file-name-nondirectory 
+   (file-name-sans-extension file)))
 
 (defun amd--goto-define ()
   (goto-char (point-min))
@@ -279,25 +305,31 @@ Note: This function is mostly a copy/paste from
                (s-contains? name file))
            (projectile-current-project-files)))
 
-(defun amd--file-name (file)
+(defun amd--file-name (file &optional relative)
   "Return the name of FILE relative to the project or the current
 buffer file."
-  (if (amd--use-relative-file-name-p file)
+  (if (or (amd--use-relative-file-name-p file)
+          relative)
       (amd--relative-file-name file)
     (amd--project-file-name file)))
 
 (defun amd--relative-file-name (file)
   "Return the name of FILE relative to the current buffer file."
-  (let* ((prefix (amd--buffer-directory)))
-    (concat "./" (file-relative-name file prefix))))
+  (f-relative file (amd--buffer-directory)))
 
 (defun amd--project-file-name (file)
   "Return the name of FILE relative to the project."
   (file-relative-name file (projectile-project-root)))
 
-(defun amd--module (file)
-  "Return the module path for FILE."
-  (file-name-sans-extension (amd--file-name file)))
+(defun amd--module (file-or-name &optional relative)
+  "Return the module path for FILE-OR-NAME.
+
+If FILE-OR-NAME is a file and RELATIVE is T, return the relative
+path of FILE-OR-NAME."
+  (let ((default-directory (projectile-project-root)))
+   (if (file-exists-p file-or-name)
+       (file-name-sans-extension (amd--file-name file-or-name relative))
+     file-or-name)))
 
 (defun amd--buffer-directory ()
   (file-name-directory (amd--buffer-file-name)))
@@ -333,7 +365,8 @@ buffer file."
 	  (actions
 	   ("Dependencies"
             ("k" "Kill buffer module" amd-kill-buffer-module)
-            ("i" "Import module" amd-import))
+            ("f" "Import file" amd-import-file)
+            ("m" "Import module name" amd-import-module))
            ("Search"
             ("o" "Find module at point" amd-find-module-at-point)
             ("s" "Search references" amd-search-references))
