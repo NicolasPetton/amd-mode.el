@@ -315,7 +315,10 @@ buffer file."
 
 (defun amd--relative-file-name (file)
   "Return the name of FILE relative to the current buffer file."
-  (f-relative file (amd--buffer-directory)))
+  (let ((relative-path (f-relative file (amd--buffer-directory))))
+    (if (s-prefix-p "." relative-path)
+        relative-path
+      (concat "./" relative-path))))
 
 (defun amd--project-file-name (file)
   "Return the name of FILE relative to the project."
