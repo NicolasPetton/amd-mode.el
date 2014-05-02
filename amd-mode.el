@@ -49,10 +49,14 @@
 ;; C-S-down: reorder the imported modules or perform
 ;; `js2r-move-line-down`.
 ;; 
-;; When `amd-use-relative-file-name` is set to `T', files are
+;; When `amd-use-relative-file-name' is set to `T', files are
 ;; imported using relative paths when the imported file is in a
 ;; subdirectory or in the same directory as the current buffer
 ;; file.
+;;
+;; When `amd-always-use-relative-file-name' is set to `T', files are
+;; always imported using relative paths.
+
 
 
 ;;; Code:
@@ -73,6 +77,14 @@ subdirectory or in the same directory as the current buffer
 file."
   :group 'amd-mode
   :type 'boolean)
+
+(defcustom amd-always-use-relative-file-name nil 
+  "Use relative file names for new module imports.
+
+Relative file names are always used."
+  :group 'amd-mode
+  :type 'boolean)
+
 
 (defvar amd-mode-map 
   (make-sparse-keymap)
@@ -126,16 +138,16 @@ the content of the node."
   (backward-char 3)
   (js2-indent-line))
 
-(defun amd-import-file (&optional arg)
+(defun amd-import-file ()
   "Prompt for a file and insert it as a dependency. Also appends
 the filename to the modules list."
-  (interactive "P")
+  (interactive)
   (amd--guard)
   (save-excursion
     (let ((file (projectile-completing-read 
                  "Import file: " 
                  (projectile-current-project-files))))
-      (amd--import file arg))))
+      (amd--import file))))
 
 (defun amd-import-module (module)
   "Prompt for MODULE and insert it as a dependency. Also
@@ -204,21 +216,17 @@ Always perform `js2r-move-line-down'."
   (save-excursion
     (js2-node-at-point (amd--goto-define-function))))
 
-(defun amd--import (file-or-name &optional relative)
+(defun amd--import (file-or-name)
   "Insert FILE-OR-NAME as a AMD module dependency. Also append it
  to the modules list."
   (amd--insert-module-name file-or-name)
-  (amd--insert-dependency file-or-name relative))
+  (amd--insert-dependency file-or-name))
 
-(defun amd--insert-dependency (file-or-name &optional relative)
-  "Insert FILE-OR-NAME as a dependency in the imports array.
-
-If FILE-OR-NAME is a file and RELATIVE is T, insert the relative
-path of FILE-OR-NAME, independently of the value of
-AMD-USE-RELATIVE-FILE-NAME."
+(defun amd--insert-dependency (file-or-name)
+  "Insert FILE-OR-NAME as a dependency in the imports array"
   (amd--goto-imports)
   (insert (concat "'"
-                  (amd--module file-or-name relative)
+                  (amd--module file-or-name)
                   "'"))
   (js2-indent-line))
 
@@ -305,11 +313,10 @@ Note: This function is mostly a copy/paste from
                (s-contains? name file))
            (projectile-current-project-files)))
 
-(defun amd--file-name (file &optional relative)
+(defun amd--file-name (file)
   "Return the name of FILE relative to the project or the current
 buffer file."
-  (if (or (amd--use-relative-file-name-p file)
-          relative)
+  (if (amd--use-relative-file-name-p file)
       (amd--relative-file-name file)
     (amd--project-file-name file)))
 
@@ -324,14 +331,11 @@ buffer file."
   "Return the name of FILE relative to the project."
   (file-relative-name file (projectile-project-root)))
 
-(defun amd--module (file-or-name &optional relative)
-  "Return the module path for FILE-OR-NAME.
-
-If FILE-OR-NAME is a file and RELATIVE is T, return the relative
-path of FILE-OR-NAME."
+(defun amd--module (file-or-name)
+  "Return the module path for FILE-OR-NAME"
   (let ((default-directory (projectile-project-root)))
    (if (file-exists-p file-or-name)
-       (file-name-sans-extension (amd--file-name file-or-name relative))
+       (file-name-sans-extension (amd--file-name file-or-name))
      file-or-name)))
 
 (defun amd--buffer-directory ()
@@ -341,9 +345,10 @@ path of FILE-OR-NAME."
   "Return T if the relative file name of FILE should be used."
   (if (string= file (buffer-file-name))
       nil
-    (and amd-use-relative-file-name
-         (s-prefix-p (amd--buffer-directory)
-                     file))))
+    (or amd-always-use-relative-file-name
+        (and amd-use-relative-file-name
+             (s-prefix-p (amd--buffer-directory)
+                         file)))))
 
 (defun amd--inside-imports-p ()
   (amd--imports-node-p (js2-node-at-point)))
@@ -365,6 +370,8 @@ path of FILE-OR-NAME."
   (makey-initialize-key-groups
    '((amd
 	  (description "AMD module helpers")
+          (lisp-switches
+           ("-r" "Import using relative paths (files only)" amd-always-use-relative-file-name t nil))
 	  (actions
 	   ("Dependencies"
             ("k" "Kill buffer module" amd-kill-buffer-module)
@@ -385,3 +392,4 @@ path of FILE-OR-NAME."
 
 (provide 'amd-mode)
 ;;; amd-mode.el ends here
+ 

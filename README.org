@@ -38,3 +38,6 @@ the file.
   imported using relative paths when the imported file is in a
   subdirectory or in the same directory as the current buffer
   file.
+
+  When `amd-always-use-relative-file-name' is set to `T', files are
+  always imported using relative paths.
