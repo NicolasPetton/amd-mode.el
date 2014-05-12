@@ -160,17 +160,17 @@ the filename to the modules list."
   (interactive)
   "When inside the import array, move up the module at point.
 Always perform `js2r-move-line-up'."
-  (js2r-move-line-up)
   (when (amd--inside-imports-p)
-    (amd--move-module-up)))
+    (amd--move-module-up))
+  (js2r-move-line-up))
 
 (defun amd-move-line-down ()
   (interactive)
   "When inside the import array, move down the module at point.
 Always perform `js2r-move-line-down'."
-  (js2r-move-line-down)
-  (if (amd--inside-imports-p)
-      (amd--move-module-down)))
+  (when (amd--inside-imports-p)
+    (amd--move-module-down))
+  (js2r-move-line-down))
 
 (defun amd--guard ()
   "Throw an error when not in a projectile project."
@@ -190,9 +190,9 @@ Always perform `js2r-move-line-down'."
          (names (amd--function-node-params function-node))
          (position (js2-position current-node 
                                  (js2-array-node-elems (js2-node-parent current-node))))
-         (module-to-move (nth (- position offset) names)))
-    (setf (nth (- position offset) names) (nth position names))
-    (setf (nth position names) module-to-move)
+         (module-to-move (nth position names)))
+    (setf (nth position names) (nth (+ offset position) names))
+    (setf (nth (+ offset position) names) module-to-move)
     (amd--set-function-params function-node names)))
 
 (defun amd--delete-function-params (node)
