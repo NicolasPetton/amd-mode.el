@@ -85,6 +85,18 @@ Relative file names are always used."
   :group 'amd-mode
   :type 'boolean)
 
+(defvar amd-rewrite-rules-alist '() 
+  "When importing a file, apply each rule against the file path. It has no effect on inserting module names not corresponding to files.
+
+It can be convenient to set `amd-rewrite-rules-alist' as a directory-local variable in the root of a project.
+
+Example: 
+(setq amd-rewrite-rules-alist '((\"^foo/\" . \"\")))  
+
+Importing the file \"foo/bar/baz.js\" will result in inserting
+\"bar/baz\" as the module path.")
+
+(make-local-variable 'amd-rewrite-rules-alist)
 
 (defvar amd-mode-map 
   (make-sparse-keymap)
@@ -335,8 +347,14 @@ buffer file."
   "Return the module path for FILE-OR-NAME"
   (let ((default-directory (projectile-project-root)))
    (if (file-exists-p file-or-name)
-       (file-name-sans-extension (amd--file-name file-or-name))
+       (amd--rewrite-path (file-name-sans-extension (amd--file-name file-or-name)))
      file-or-name)))
+
+(defun amd--rewrite-path (path)
+  "Rewrite PATH according to `amd-rewrite-rules-alist'."
+  (dolist (rule amd-rewrite-rules-alist)
+    (setq path (replace-regexp-in-string (car rule) (cdr rule) path)))
+  path)
 
 (defun amd--buffer-directory ()
   (file-name-directory (amd--buffer-file-name)))
