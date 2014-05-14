@@ -86,9 +86,11 @@ Relative file names are always used."
   :type 'boolean)
 
 (defvar amd-rewrite-rules-alist '() 
-  "When importing a file, apply each rule against the file path. It has no effect on inserting module names not corresponding to files.
+  "When importing a file, apply each rule against the file path. 
+It has no effect on inserting module names not corresponding to files.
 
-It can be convenient to set `amd-rewrite-rules-alist' as a directory-local variable in the root of a project.
+It can be convenient to set `amd-rewrite-rules-alist' as a
+directory-local variable in the root of a project.
 
 Example: 
 (setq amd-rewrite-rules-alist '((\"^foo/\" . \"\")))  
