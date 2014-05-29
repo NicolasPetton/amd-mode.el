@@ -1,6 +1,6 @@
 Feature: Auto insert
   Background:
-    when I turn on js2-mode
+    When I turn on js2-mode
     And I turn on amd-mode
 
   Scenario: Auto insert in empty file

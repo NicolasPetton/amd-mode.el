@@ -1,7 +1,7 @@
 Feature: Kill buffer path
   Background: 
     Given I am in file "foo.js"
-    when I turn on js2-mode
+    When I turn on js2-mode
     And I turn on amd-mode
 
   Scenario: Kill and yank buffer path
