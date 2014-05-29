@@ -24,7 +24,7 @@
 ;;
 ;; amd-mode.el works with js2-mode and (at the moment) requires to be
 ;; with a projectile project.
-;; 
+;;
 ;; C-c C-d k: `amd-kill-buffer-module': Kill the module path of the
 ;; buffer's file.
 ;;
@@ -45,10 +45,10 @@
 ;;
 ;; C-S-up: reorder the imported modules or perform
 ;; `js2r-move-line-up`.
-;; 
+;;
 ;; C-S-down: reorder the imported modules or perform
 ;; `js2r-move-line-down`.
-;; 
+;;
 ;; When `amd-use-relative-file-name' is set to `T', files are
 ;; imported using relative paths when the imported file is in a
 ;; subdirectory or in the same directory as the current buffer
@@ -69,7 +69,7 @@
 (require 'f)
 (require 'dash)
 
-(defcustom amd-use-relative-file-name nil 
+(defcustom amd-use-relative-file-name nil
   "Use relative file names for new module imports.
 
 Relative file names are only used if the module is in a
@@ -78,33 +78,33 @@ file."
   :group 'amd-mode
   :type 'boolean)
 
-(defcustom amd-always-use-relative-file-name nil 
+(defcustom amd-always-use-relative-file-name nil
   "Use relative file names for new module imports.
 
 Relative file names are always used."
   :group 'amd-mode
   :type 'boolean)
 
-(defvar amd-rewrite-rules-alist '() 
-  "When importing a file, apply each rule against the file path. 
+(defvar amd-rewrite-rules-alist '()
+  "When importing a file, apply each rule against the file path.
 It has no effect on inserting module names not corresponding to files.
 
 It can be convenient to set `amd-rewrite-rules-alist' as a
 directory-local variable in the root of a project.
 
-Example: 
-(setq amd-rewrite-rules-alist '((\"^foo/\" . \"\")))  
+Example:
+(setq amd-rewrite-rules-alist '((\"^foo/\" . \"\")))
 
 Importing the file \"foo/bar/baz.js\" will result in inserting
 \"bar/baz\" as the module path.")
 
 (make-local-variable 'amd-rewrite-rules-alist)
 
-(defvar amd-mode-map 
+(defvar amd-mode-map
   (make-sparse-keymap)
   "Keymap for amd-mode")
 
-(define-minor-mode amd-mode 
+(define-minor-mode amd-mode
   "Minor mode for handling AMD modules within a JavaScript file."
   :lighter " AMD"
   :keymap amd-mode-map)
@@ -124,10 +124,10 @@ directory."
 project."
   (interactive)
   (amd--guard)
-  (projectile-ack (concat 
+  (projectile-ack (concat
                    "['|\"].*"
-                   (file-name-nondirectory 
-                    (file-name-sans-extension 
+                   (file-name-nondirectory
+                    (file-name-sans-extension
                      (buffer-file-name)))
                    "['|\"]")))
 
@@ -158,8 +158,8 @@ the filename to the modules list."
   (interactive)
   (amd--guard)
   (save-excursion
-    (let ((file (projectile-completing-read 
-                 "Import file: " 
+    (let ((file (projectile-completing-read
+                 "Import file: "
                  (projectile-current-project-files))))
       (amd--import file))))
 
@@ -202,7 +202,7 @@ Always perform `js2r-move-line-down'."
          (function-node (amd--define-function-node))
          (params (amd--function-node-params function-node))
          (names (amd--function-node-params function-node))
-         (position (js2-position current-node 
+         (position (js2-position current-node
                                  (js2-array-node-elems (js2-node-parent current-node))))
          (module-to-move (nth position names)))
     (setf (nth position names) (nth (+ offset position) names))
@@ -246,20 +246,20 @@ Always perform `js2r-move-line-down'."
 
 (defun amd--insert-module-name (file)
   (let* ((default-module-name (amd--module-name file))
-         (module-name (read-string (concat "Import as (" 
-                                           default-module-name 
+         (module-name (read-string (concat "Import as ("
+                                           default-module-name
                                            "): "))))
     (amd--goto-define-function-params)
     (search-forward ")")
     (backward-char 1)
     (unless (looking-back "(")
-      (insert ", "))      
-    (insert (if (string= "" module-name) 
+      (insert ", "))
+    (insert (if (string= "" module-name)
                 default-module-name
               module-name))))
 
 (defun amd--module-name (file)
-  (file-name-nondirectory 
+  (file-name-nondirectory
    (file-name-sans-extension file)))
 
 (defun amd--goto-define ()
@@ -280,7 +280,7 @@ Always perform `js2r-move-line-down'."
          (last-child (js2-node-last-child current-node)))
     (if (js2-array-node-p current-node)
         (if last-child
-            (progn 
+            (progn
               (goto-char (js2-node-abs-end last-child))
               (insert ",\n"))
           (forward-char 1))
@@ -309,7 +309,7 @@ project."
     (goto-char (js2-node-abs-pos node))
     (let ((beg (search-forward "("))
           (end (- (search-forward ")") 1)))
-      (mapcar #'s-trim 
+      (mapcar #'s-trim
               (split-string (buffer-substring beg end) ",")))))
 
 (defun amd--find-file-matching (name)
@@ -348,9 +348,9 @@ buffer file."
 (defun amd--module (file-or-name)
   "Return the module path for FILE-OR-NAME"
   (let ((default-directory (projectile-project-root)))
-   (if (file-exists-p file-or-name)
-       (amd--rewrite-path (file-name-sans-extension (amd--file-name file-or-name)))
-     file-or-name)))
+    (if (file-exists-p file-or-name)
+        (amd--rewrite-path (file-name-sans-extension (amd--file-name file-or-name)))
+      file-or-name)))
 
 (defun amd--rewrite-path (path)
   "Rewrite PATH according to `amd-rewrite-rules-alist'."
@@ -381,27 +381,27 @@ buffer file."
 
 (defun amd--define-node-p (node)
   (let ((target (js2-call-node-target node)))
-   (and (js2-call-node-p node)
-        (string= (js2-name-node-name target) "define"))))
+    (and (js2-call-node-p node)
+         (string= (js2-name-node-name target) "define"))))
 
 
-(defun amd-initialize-makey-group () 
+(defun amd-initialize-makey-group ()
   (interactive)
   (makey-initialize-key-groups
    '((amd
-	  (description "AMD module helpers")
-          (lisp-switches
-           ("-r" "Import using relative paths (files only)" amd-always-use-relative-file-name t nil))
-	  (actions
-	   ("Dependencies"
-            ("k" "Kill buffer module" amd-kill-buffer-module)
-            ("f" "Import file" amd-import-file)
-            ("m" "Import module name" amd-import-module))
-           ("Search"
-            ("o" "Find module at point" amd-find-module-at-point)
-            ("s" "Search references" amd-search-references))
-           ("Auto insert"
-            ("a" "Auto insert" amd-auto-insert))))))
+      (description "AMD module helpers")
+      (lisp-switches
+       ("-r" "Import using relative paths (files only)" amd-always-use-relative-file-name t nil))
+      (actions
+       ("Dependencies"
+        ("k" "Kill buffer module" amd-kill-buffer-module)
+        ("f" "Import file" amd-import-file)
+        ("m" "Import module name" amd-import-module))
+       ("Search"
+        ("o" "Find module at point" amd-find-module-at-point)
+        ("s" "Search references" amd-search-references))
+       ("Auto insert"
+        ("a" "Auto insert" amd-auto-insert))))))
   (makey-key-mode-popup-amd))
 
 (define-key amd-mode-map (kbd "C-c C-d") #'amd-initialize-makey-group)
@@ -412,4 +412,3 @@ buffer file."
 
 (provide 'amd-mode)
 ;;; amd-mode.el ends here
- 
