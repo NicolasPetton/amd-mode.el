@@ -167,8 +167,9 @@ the filename to the modules list."
   "Prompt for MODULE and insert it as a dependency. Also
  append it to the modules list."
   (interactive "sImport module name: ")
-  (amd--guard)
-  (amd--import module))
+  (save-excursion 
+    (amd--guard)
+    (amd--import module)))
 
 (defun amd-move-line-up ()
   (interactive)
