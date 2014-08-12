@@ -160,13 +160,14 @@ the filename to the modules list."
   (save-excursion
     (let ((file (projectile-completing-read
                  "Import file: "
-                 (projectile-current-project-files))))
+                 (projectile-current-project-files)
+                 (word-at-point))))
       (amd--import file))))
 
 (defun amd-import-module (module)
   "Prompt for MODULE and insert it as a dependency. Also
  append it to the modules list."
-  (interactive "sImport module name: ")
+  (interactive (list (read-string "sImport module name: " (word-at-point))))
   (save-excursion 
     (amd--guard)
     (amd--import module)))
