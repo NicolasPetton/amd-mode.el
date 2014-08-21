@@ -176,16 +176,21 @@ the filename to the modules list."
   (interactive)
   "When inside the import array, move up the module at point.
 Always perform `js2r-move-line-up'."
-  (when (amd--inside-imports-p)
-    (amd--move-module-up))
+  (save-excursion
+    (back-to-indentation)
+    (when (amd--inside-imports-p)
+      (amd--move-module-up)))
   (js2r-move-line-up))
 
 (defun amd-move-line-down ()
   (interactive)
   "When inside the import array, move down the module at point.
 Always perform `js2r-move-line-down'."
-  (when (amd--inside-imports-p)
-    (amd--move-module-down))
+  (save-excursion
+    (back-to-indentation)
+    (when (amd--inside-imports-p)
+      (message "yup")
+      (amd--move-module-down)))
   (js2r-move-line-down))
 
 (defun amd--guard ()
