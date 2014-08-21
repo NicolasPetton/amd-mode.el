@@ -266,7 +266,8 @@ Always perform `js2r-move-line-down'."
 
 (defun amd--goto-define ()
   (goto-char (point-min))
-  (search-forward "define("))
+  (search-forward "define(")
+  (skip-chars-forward " \n\t"))
 
 (defun amd--goto-define-function-params ()
   (amd--goto-define)
