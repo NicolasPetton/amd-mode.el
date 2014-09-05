@@ -189,7 +189,6 @@ Always perform `js2r-move-line-down'."
   (save-excursion
     (back-to-indentation)
     (when (amd--inside-imports-p)
-      (message "yup")
       (amd--move-module-down)))
   (js2r-move-line-down))
 
