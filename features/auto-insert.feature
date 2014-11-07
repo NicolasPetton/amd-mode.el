@@ -4,7 +4,7 @@ Feature: Auto insert
     And I turn on amd-mode
 
   Scenario: Auto insert in empty file
-    And I press "C-c C-d a"
+    And I press "C-c C-a a"
     Then I should see:
     """
     define(function(){

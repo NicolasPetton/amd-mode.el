@@ -7,5 +7,5 @@ Feature: Find module at point
     And I go to word "bar"
 
   Scenario:
-    When I press "C-c C-d o bar"
+    When I press "C-c C-a o bar"
     Then I should be in buffer "bar.js"
