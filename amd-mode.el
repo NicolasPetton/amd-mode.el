@@ -167,7 +167,7 @@ the filename to the modules list."
 (defun amd-import-module (module)
   "Prompt for MODULE and insert it as a dependency. Also
  append it to the modules list."
-  (interactive (list (read-string "sImport module name: " (word-at-point))))
+  (interactive (list (read-string "Import module name: " (word-at-point))))
   (save-excursion 
     (amd--guard)
     (amd--import module)))
@@ -411,7 +411,7 @@ buffer file."
         ("a" "Auto insert" amd-auto-insert))))))
   (makey-key-mode-popup-amd))
 
-(define-key amd-mode-map (kbd "C-c C-d") #'amd-initialize-makey-group)
+(define-key amd-mode-map (kbd "C-c C-a") #'amd-initialize-makey-group)
 (define-key amd-mode-map (kbd "<C-S-up>") #'amd-move-line-up)
 (define-key amd-mode-map (kbd "<C-S-down>") #'amd-move-line-down)
 
