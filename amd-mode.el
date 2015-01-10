@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2014  Nicolas Petton
 ;;
-;; Author: Nicolas Petton(require 'projectile) <petton.nicolas@gmail.com>
+;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;; Keywords: javascript, amd, projectile
 ;; Version: 0.5
 ;; Package: amd-mode
@@ -168,7 +168,7 @@ the filename to the modules list."
   "Prompt for MODULE and insert it as a dependency. Also
  append it to the modules list."
   (interactive (list (read-string "Import module name: " (word-at-point))))
-  (save-excursion 
+  (save-excursion
     (amd--guard)
     (amd--import module)))
 
