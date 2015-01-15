@@ -124,12 +124,12 @@ directory."
 project."
   (interactive)
   (amd--guard)
-  (projectile-ack (concat
-                   "['|\"].*"
+  (projectile-ag (concat
+                   "\[\'|\"\].*"
                    (file-name-nondirectory
                     (file-name-sans-extension
                      (buffer-file-name)))
-                   "['|\"]")))
+                   "\[\'|\"\]") t))
 
 (defun amd-find-module-at-point ()
   "When on a node, find the module file at point represented by
