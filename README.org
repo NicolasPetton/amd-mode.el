@@ -2,7 +2,7 @@
   
   Minor mode for handling JavaScript AMD module requirements.
   
-  Copyright (C) 2014 Nicolas Petton
+  Copyright (C) 2014-2015 Nicolas Petton
   
   amd-mode.el provides convenience methods and keybindings for handling
   AMD module definitions.

@@ -1,6 +1,6 @@
 ;;; amd-mode.el --- Minor mode for handling JavaScript AMD module requirements.
 
-;; Copyright (C) 2014  Nicolas Petton
+;; Copyright (C) 2014-2015  Nicolas Petton
 ;;
 ;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;; Keywords: javascript, amd, projectile
