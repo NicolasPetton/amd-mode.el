@@ -85,6 +85,11 @@ Relative file names are always used."
   :group 'amd-mode
   :type 'boolean)
 
+(defcustom amd-write-file-function 'write-file
+  "Function used to write files."
+  :group 'amd-mode
+  :type 'symbol)
+
 (defvar amd-rewrite-rules-alist '()
   "When importing a file, apply each rule against the file path.
 It has no effect on inserting module names not corresponding to files.
@@ -102,7 +107,7 @@ Importing the file \"foo/bar/baz.js\" will result in inserting
 
 (defvar amd-mode-map
   (make-sparse-keymap)
-  "Keymap for amd-mode")
+  "Keymap for amd-mode.")
 
 (define-minor-mode amd-mode
   "Minor mode for handling AMD modules within a JavaScript file."
@@ -120,20 +125,13 @@ directory."
                     "'")))
 
 (defun amd-search-references ()
-  "Find amd references of the buffer's module in the current
-project."
+  "Find amd references of the buffer's module in the current project."
   (interactive)
   (amd--guard)
-  (projectile-ag (concat
-                   "\[\'|\"\].*"
-                   (file-name-nondirectory
-                    (file-name-sans-extension
-                     (buffer-file-name)))
-                   "\[\'|\"\]") t))
+  (projectile-ag (amd--file-reference-regexp) t))
 
 (defun amd-find-module-at-point ()
-  "When on a node, find the module file at point represented by
-the content of the node."
+  "When on a node, find the module file at point represented by the content of the node."
   (interactive)
   (amd--guard)
   (let* ((current-node (js2-node-at-point))
@@ -142,7 +140,7 @@ the content of the node."
     (amd--find-file-matching name)))
 
 (defun amd-auto-insert ()
-  "Auto inserts a default template contents for AMD files."
+  "Auto insert a default template contents for AMD files."
   (interactive)
   (amd--guard)
   (goto-char (point-min))
@@ -153,8 +151,8 @@ the content of the node."
   (js2-indent-line))
 
 (defun amd-import-file ()
-  "Prompt for a file and insert it as a dependency. Also appends
-the filename to the modules list."
+  "Prompt for a file and insert it as a dependency.
+Also appends the filename to the modules list."
   (interactive)
   (amd--guard)
   (save-excursion
@@ -163,6 +161,27 @@ the filename to the modules list."
                  (projectile-current-project-files)
                  (word-at-point))))
       (amd--import file))))
+
+(defun amd-rename-file ()
+  "Rename the current buffer file and update references."
+  (interactive)
+  (amd--guard)
+  (let* ((original-file (buffer-file-name))
+         (original-file-name  (file-name-nondirectory
+                               (file-name-sans-extension
+                                original-file)))
+         (file-reference-regexp (amd--file-reference-regexp))
+         (files (-remove-item original-file
+                             (mapcar #'projectile-expand-root
+                                     (projectile-files-with-string original-file-name
+                                                                   (projectile-project-root))))))
+    (call-interactively amd-write-file-function)
+    (delete-file original-file)
+    (save-excursion
+      (tags-query-replace file-reference-regexp
+                          (format "'%s'" (amd--module (buffer-file-name)))
+                          nil
+                          (cons 'list files)))))
 
 (defun amd-import-module (module)
   "Prompt for MODULE and insert it as a dependency. Also
@@ -391,6 +410,13 @@ buffer file."
     (and (js2-call-node-p node)
          (string= (js2-name-node-name target) "define"))))
 
+(defun amd--file-reference-regexp ()
+  (concat
+   "\[\'|\"\].*"
+   (file-name-nondirectory
+    (file-name-sans-extension
+     (buffer-file-name)))
+   "\[\'|\"\]"))
 
 (defun amd-initialize-makey-group ()
   (interactive)
@@ -403,7 +429,8 @@ buffer file."
        ("Dependencies"
         ("k" "Kill buffer module" amd-kill-buffer-module)
         ("f" "Import file" amd-import-file)
-        ("m" "Import module name" amd-import-module))
+        ("m" "Import module name" amd-import-module)
+        ("r" "Rename file and update dependencies" amd-rename-file))
        ("Search"
         ("o" "Find module at point" amd-find-module-at-point)
         ("s" "Search references" amd-search-references))
