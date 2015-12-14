@@ -57,8 +57,6 @@
 ;; When `amd-always-use-relative-file-name' is set to `T', files are
 ;; always imported using relative paths.
 
-
-
 ;;; Code:
 
 (require 'js2-mode)
@@ -172,29 +170,57 @@ Also appends the filename to the modules list."
                                 original-file)))
          (file-reference-regexp (amd--file-reference-regexp))
          (files (-remove-item original-file
-                             (mapcar #'projectile-expand-root
-                                     (projectile-files-with-string original-file-name
-                                                                   (projectile-project-root))))))
+                              (mapcar #'projectile-expand-root
+                                      (projectile-files-with-string original-file-name
+                                                                    (projectile-project-root))))))
     (call-interactively amd-write-file-function)
     (delete-file original-file)
+    (message "Renaming references in project...")
+    (amd--replace-files file-reference-regexp
+                        `(lambda ()
+                           (format "'%s'" (amd--module ,(amd--buffer-file-name))))
+                        files
+                        #'amd--inside-imports-p)
+    (when (y-or-n-p "Save all project buffers? ")
+      (projectile-save-project-buffers))))
+
+(defun amd--replace-files (from to files &optional condition)
+  "Replace FROM with TO in FILES, if CONDITION returns non-nil.
+Replacement is only done in JS files, other files are ignored.
+TO can be a string or a function returning a string."
+  (dolist (file files)
+    (when (string= "js" (file-name-extension file))
+      (condition-case error
+          (amd--replace from to file condition)
+        (error (message "Unable to perform replacement in %s" file))))))
+
+(defun amd--replace (from to file &optional condition)
+  (unless (stringp to)
+    (setq to (funcall to)))
+  (unless condition
+    (setq condition (lambda () t)))
+  (with-current-buffer (find-file-noselect file)
     (save-excursion
-      (tags-query-replace file-reference-regexp
-                          (format "'%s'" (amd--module (buffer-file-name)))
-                          nil
-                          (cons 'list files)))))
+      (save-restriction
+        (widen)
+        (goto-char (point-min))
+        (while (and
+                (re-search-forward from nil t)
+                (funcall condition)
+                (replace-match to nil nil)))))))
 
 (defun amd-import-module (module)
-  "Prompt for MODULE and insert it as a dependency. Also
- append it to the modules list."
+  "Prompt for MODULE and insert it as a dependency.
+Also append it to the modules list."
   (interactive (list (read-string "Import module name: " (word-at-point))))
   (save-excursion
     (amd--guard)
     (amd--import module)))
 
 (defun amd-move-line-up ()
-  (interactive)
   "When inside the import array, move up the module at point.
 Always perform `js2r-move-line-up'."
+  (interactive)
   (save-excursion
     (back-to-indentation)
     (when (amd--inside-imports-p)
@@ -202,9 +228,9 @@ Always perform `js2r-move-line-up'."
   (js2r-move-line-up))
 
 (defun amd-move-line-down ()
-  (interactive)
   "When inside the import array, move down the module at point.
 Always perform `js2r-move-line-down'."
+  (interactive)
   (save-excursion
     (back-to-indentation)
     (when (amd--inside-imports-p)
@@ -262,7 +288,7 @@ Always perform `js2r-move-line-down'."
   (amd--insert-dependency file-or-name))
 
 (defun amd--insert-dependency (file-or-name)
-  "Insert FILE-OR-NAME as a dependency in the imports array"
+  "Insert FILE-OR-NAME as a dependency in the imports array."
   (amd--goto-imports)
   (insert (concat "'"
                   (amd--module file-or-name)
@@ -277,7 +303,7 @@ Always perform `js2r-move-line-down'."
     (amd--goto-define-function-params)
     (search-forward ")")
     (backward-char 1)
-    (unless (looking-back "(")
+    (unless (looking-back "(" nil)
       (insert ", "))
     (insert (if (string= "" module-name)
                 default-module-name
@@ -388,7 +414,7 @@ buffer file."
   (file-name-directory (amd--buffer-file-name)))
 
 (defun amd--use-relative-file-name-p (file)
-  "Return T if the relative file name of FILE should be used."
+  "Return non-nil if the relative file name of FILE should be used."
   (if (string= file (buffer-file-name))
       nil
     (or amd-always-use-relative-file-name
@@ -397,10 +423,11 @@ buffer file."
                          file)))))
 
 (defun amd--inside-imports-p ()
-  (amd--imports-node-p (js2-node-at-point)))
+  (or (amd--imports-node-p (js2-node-at-point))
+      (amd--imports-node-p (js2-node-parent (js2-node-at-point)))))
 
 (defun amd--imports-node-p (node)
-  (let* ((imports-node (js2-node-parent node))
+  (let* ((imports-node node)
          (define-node (js2-node-parent imports-node)))
     (and (js2-array-node-p imports-node)
          (amd--define-node-p define-node))))
