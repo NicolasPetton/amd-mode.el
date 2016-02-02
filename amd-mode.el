@@ -126,7 +126,7 @@ directory."
   "Find amd references of the buffer's module in the current project."
   (interactive)
   (amd--guard)
-  (projectile-ag (amd--file-reference-regexp) t))
+  (projectile-ag (amd--file-search-regexp) t))
 
 (defun amd-find-module-at-point ()
   "When on a node, find the module file at point represented by the content of the node."
@@ -168,7 +168,7 @@ Also appends the filename to the modules list."
          (original-file-name  (file-name-nondirectory
                                (file-name-sans-extension
                                 original-file)))
-         (file-reference-regexp (amd--file-reference-regexp))
+         (file-replace-regexp (amd--file-replace-regexp))
          (files (-remove-item original-file
                               (mapcar #'projectile-expand-root
                                       (projectile-files-with-string original-file-name
@@ -176,25 +176,29 @@ Also appends the filename to the modules list."
     (call-interactively amd-write-file-function)
     (delete-file original-file)
     (message "Renaming references in project...")
-    (amd--replace-files file-reference-regexp
-                        `(lambda ()
-                           (format "'%s'" (amd--module ,(amd--buffer-file-name))))
-                        files
-                        #'amd--inside-imports-p)
+    (amd--replace-all-file-references file-replace-regexp
+                                   (current-buffer)
+                                   files
+                                   #'amd--inside-imports-p)
     (when (y-or-n-p "Save all project buffers? ")
       (projectile-save-project-buffers))))
 
-(defun amd--replace-files (from to files &optional condition)
-  "Replace FROM with TO in FILES, if CONDITION returns non-nil.
+(defun amd--replace-all-file-references (from buffer files &optional condition)
+  "Replace FROM with the AMD name of BUFFER in FILES, if CONDITION returns non-nil.
 Replacement is only done in JS files, other files are ignored.
 TO can be a string or a function returning a string."
   (dolist (file files)
-    (when (string= "js" (file-name-extension file))
-      (condition-case error
-          (amd--replace from to file condition)
-        (error (message "Unable to perform replacement in %s" file))))))
+    (with-current-buffer (find-file-noselect file)
+     (when (string= "js" (file-name-extension file))
+       (condition-case error
+           (amd--replace-references-in-file from
+                                            `(lambda ()
+                                               (format "%s" (amd--module (amd--buffer-file-name ,buffer))))
+                                            file
+                                            condition)
+         (error (message "Unable to perform replacement in %s" file)))))))
 
-(defun amd--replace (from to file &optional condition)
+(defun amd--replace-references-in-file (from to file &optional condition)
   (unless (stringp to)
     (setq to (funcall to)))
   (unless condition
@@ -207,7 +211,7 @@ TO can be a string or a function returning a string."
         (while (and
                 (re-search-forward from nil t)
                 (funcall condition)
-                (replace-match to nil nil)))))))
+                (replace-match (concat "\\1" to "\\3"))))))))
 
 (defun amd-import-module (module)
   "Prompt for MODULE and insert it as a dependency.
@@ -341,10 +345,10 @@ Always perform `js2r-move-line-down'."
         (forward-char -4))))
   (js2-indent-line))
 
-(defun amd--buffer-file-name ()
+(defun amd--buffer-file-name (&optional buffer)
   "Return the name of the buffer's file relative to the current
 project."
-  (amd--file-name (buffer-file-name)))
+  (amd--file-name (buffer-file-name buffer)))
 
 (defun amd--buffer-module ()
   (amd--module (buffer-file-name)))
@@ -437,13 +441,21 @@ buffer file."
     (and (js2-call-node-p node)
          (string= (js2-name-node-name target) "define"))))
 
-(defun amd--file-reference-regexp ()
+(defun amd--file-search-regexp ()
   (concat
    "\[\'|\"\].*"
    (file-name-nondirectory
     (file-name-sans-extension
      (buffer-file-name)))
    "\[\'|\"\]"))
+
+(defun amd--file-replace-regexp ()
+  (concat
+   "\\(define([^)]+['|\"]\\)\\(.*"
+   (file-name-nondirectory
+    (file-name-sans-extension
+     (buffer-file-name)))
+   "\\)\\(['|\"]\\)"))
 
 (defun amd-initialize-makey-group ()
   (interactive)
