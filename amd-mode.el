@@ -62,6 +62,7 @@
 (require 'js2-mode)
 (require 'js2-refactor)
 (require 'projectile)
+(require 'ag)
 (require 'makey)
 (require 's)
 (require 'f)
@@ -126,7 +127,12 @@ directory."
   "Find amd references of the buffer's module in the current project."
   (interactive)
   (amd--guard)
-  (projectile-ag (amd--file-search-regexp) t))
+  (let ((ag-ignore-list (-union ag-ignore-list
+                                (append (projectile-ignored-files-rel)
+                                        (projectile-ignored-directories-rel)
+                                        grep-find-ignored-files
+                                        grep-find-ignored-directories))))
+    (ag-regexp (amd--file-search-regexp) (projectile-project-root))))
 
 (defun amd-find-module-at-point ()
   "When on a node, find the module file at point represented by the content of the node."
