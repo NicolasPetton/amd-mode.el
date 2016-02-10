@@ -6,7 +6,7 @@
 ;; Keywords: javascript, amd, projectile
 ;; Version: 1.0
 ;; Package: amd-mode
-;; Package-Requires: ((projectile "0.10.0") (s "1.9.0") (f "0.16.2") (dash "2.5.0") (makey "0.3") (js2-mode "20140114") (js2-refactor "0.6.1"))
+;; Package-Requires: ((projectile "0.10.0") (ag "0.47")  (s "1.9.0") (f "0.16.2") (dash "2.5.0") (makey "0.3") (js2-mode "20140114") (js2-refactor "0.6.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
