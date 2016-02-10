@@ -449,7 +449,7 @@ buffer file."
 
 (defun amd--file-search-regexp ()
   (concat
-   "\[\'|\"\].*"
+   "\[\'|\"\].*/"
    (file-name-nondirectory
     (file-name-sans-extension
      (buffer-file-name)))
