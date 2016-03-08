@@ -148,7 +148,7 @@ directory."
   (interactive)
   (amd--guard)
   (goto-char (point-min))
-  (insert "define(function(){
+  (insert "define(function() {
 
 });")
   (backward-char 3)
