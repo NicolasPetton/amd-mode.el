@@ -163,7 +163,7 @@ Also appends the filename to the modules list."
     (let ((file (projectile-completing-read
                  "Import file: "
                  (projectile-current-project-files)
-                 (word-at-point))))
+                 (concat (symbol-name (symbol-at-point)) ".js"))))
       (amd--import file))))
 
 (defun amd-rename-file ()
