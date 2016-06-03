@@ -138,10 +138,7 @@ directory."
   "When on a node, find the module file at point represented by the content of the node."
   (interactive)
   (amd--guard)
-  (let* ((current-node (js2-node-at-point))
-         (string-contents (amd--node-content current-node))
-         (name (s-replace-all '(("'" . "") ("\"" "")) string-contents)))
-    (amd--find-file-matching name)))
+  (amd--find-file-matching (symbol-name (symbol-at-point))))
 
 (defun amd-auto-insert ()
   "Auto insert a default template contents for AMD files."
@@ -379,8 +376,10 @@ project."
 
 Note: This function is mostly a copy/paste from
 `projectile-find-file`"
-  (let* ((matching-files (amd--current-files-matching name))
-         (file (projectile-completing-read "Find file: " matching-files)))
+  (let ((file (projectile-completing-read
+                "Find file: "
+                (projectile-current-project-files)
+                (concat name ".js"))))
     (find-file (expand-file-name file (projectile-project-root)))
     (run-hooks 'projectile-find-file-hook)))
 
@@ -477,8 +476,8 @@ buffer file."
         ("m" "Import module name" amd-import-module)
         ("r" "Rename file and update dependencies" amd-rename-file))
        ("Search"
-        ("o" "Find module at point" amd-find-module-at-point)
-        ("s" "Search references" amd-search-references))
+        ("." "Find module at point" amd-find-module-at-point)
+        ("?" "Search references" amd-search-references))
        ("Auto insert"
         ("a" "Auto insert" amd-auto-insert))))))
   (makey-key-mode-popup-amd))
