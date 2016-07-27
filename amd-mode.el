@@ -1,6 +1,6 @@
 ;;; amd-mode.el --- Minor mode for handling JavaScript AMD module requirements.
 
-;; Copyright (C) 2014-2015  Nicolas Petton
+;; Copyright (C) 2014-2016  Nicolas Petton
 ;;
 ;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;; Keywords: javascript, amd, projectile
@@ -235,20 +235,27 @@ from the function arguments as well."
   (interactive)
   (if (and (amd--inside-imports-p)
            (looking-back "^[\s\t]*")
-           (not (looking-at "[\s\t]*$")))
+           (looking-at "[\s\t]*'"))
       (amd-kill-module)
     (js2r-kill)))
 
 (defun amd-kill-module ()
   (save-excursion
     (back-to-indentation)
-    (amd--remove-module-from-params))
-  (kill-line))
+    (amd--remove-module-from-params)
+    (beginning-of-line)
+    (kill-line)
+    (kill-line)
+    ;; Check for a trailing comma
+    (when (looking-at "[\s\t\n]*\\]")
+      (forward-line -1)
+      (end-of-line)
+      (when (re-search-backward ",[\s\t]*" nil t)
+        (kill-line)))))
 
 (defun amd--remove-module-from-params ()
   (let* ((current-node (js2-node-at-point))
          (function-node (amd--define-function-node))
-         (params (amd--function-node-params function-node))
          (names (amd--function-node-params function-node))
          (position (js2-position current-node
                                  (js2-array-node-elems (js2-node-parent current-node))))
@@ -290,7 +297,6 @@ Always perform `js2r-move-line-down'."
 (defun amd--move-module (offset)
   (let* ((current-node (js2-node-at-point))
          (function-node (amd--define-function-node))
-         (params (amd--function-node-params function-node))
          (names (amd--function-node-params function-node))
          (position (js2-position current-node
                                  (js2-array-node-elems (js2-node-parent current-node))))
@@ -308,13 +314,14 @@ Always perform `js2r-move-line-down'."
 
 (defun amd--set-function-params (node params)
   (amd--delete-function-params node)
-  (save-excursion
-    (goto-char (js2-node-abs-pos node))
-    (search-forward "(")
-    (insert (car params))
-    (dolist (param (cdr params))
-      (insert ", ")
-      (insert param))))
+  (when params
+    (save-excursion
+      (goto-char (js2-node-abs-pos node))
+      (search-forward "(")
+      (insert (car params))
+      (dolist (param (cdr params))
+        (insert ", ")
+        (insert param)))))
 
 (defun amd--define-function-node ()
   (save-excursion
@@ -322,9 +329,35 @@ Always perform `js2r-move-line-down'."
 
 (defun amd--import (file-or-name)
   "Insert FILE-OR-NAME as a AMD module dependency. Also append it
- to the modules list."
-  (amd--insert-module-name file-or-name)
-  (amd--insert-dependency file-or-name))
+ to the modules list.
+
+If FILE-OR-NAME is already imported, does nothing."
+  (let* ((imports (amd--imported-modules))
+         (default-module-name (amd--module-name file))
+         (module-name (read-string (concat "Import as ("
+                                           default-module-name
+                                           "): ")))
+         (module-name (if (string= "" module-name)
+                          default-module-name
+                        module-name))
+         (already-defined (amd--symbol-defined-in-scope-chain-p
+                           (intern module-name)
+                           (js2-node-at-point))))
+    ;; when already loaded under the same name, does nothing.
+    (unless (-contains-p imports module-name)
+      (if (or (not already-defined)
+              (y-or-n-p (format "Name %s already defined.  Use anyway? "
+                                module-name)))
+          (progn
+            (amd--insert-module-name module-name)
+            (amd--insert-dependency file-or-name))
+        (amd--import file-or-name)))))
+
+(defun amd--imported-modules ()
+  "Return the list of imported module names."
+  (save-excursion
+    (let ((function-node (amd--define-function-node)))
+      (amd--function-node-params function-node))))
 
 (defun amd--insert-dependency (file-or-name)
   "Insert FILE-OR-NAME as a dependency in the imports array."
@@ -334,19 +367,13 @@ Always perform `js2r-move-line-down'."
                   "'"))
   (js2-indent-line))
 
-(defun amd--insert-module-name (file)
-  (let* ((default-module-name (amd--module-name file))
-         (module-name (read-string (concat "Import as ("
-                                           default-module-name
-                                           "): "))))
-    (amd--goto-define-function-params)
-    (search-forward ")")
-    (backward-char 1)
-    (unless (looking-back "(" nil)
-      (insert ", "))
-    (insert (if (string= "" module-name)
-                default-module-name
-              module-name))))
+(defun amd--insert-module-name (name)
+  (amd--goto-define-function-params)
+  (search-forward ")")
+  (backward-char 1)
+  (unless (looking-back "(" nil)
+    (insert ", "))
+  (insert name))
 
 (defun amd--module-name (file)
   (file-name-nondirectory
@@ -365,14 +392,25 @@ Always perform `js2r-move-line-down'."
   (amd--goto-define-function-params)
   (search-backward "function"))
 
+(defun amd--number-of-named-modules ()
+  "Return the number of modules that are imported and named.
+Modules imported but absent from the function arguments are
+ignored."
+  (save-excursion
+    (amd--goto-define-function)
+    (length (js2-function-node-params (js2-node-at-point)))))
+
 (defun amd--goto-imports ()
+  "Go to the last named imported module node."
   (amd--goto-define)
   (let* ((current-node (js2-node-at-point))
-         (last-child (js2-node-last-child current-node)))
+         (number-of-named-modules (amd--number-of-named-modules))
+         (last-module (nth (1- number-of-named-modules)
+                           (js2-node-child-list current-node))))
     (if (js2-array-node-p current-node)
-        (if last-child
+        (if last-module
             (progn
-              (goto-char (js2-node-abs-end last-child))
+              (goto-char (js2-node-abs-end last-module))
               (insert ",\n"))
           (forward-char 1))
       (progn
@@ -401,7 +439,7 @@ project."
     (let ((beg (search-forward "("))
           (end (- (search-forward ")") 1)))
       (mapcar #'s-trim
-              (split-string (buffer-substring beg end) ",")))))
+              (split-string (buffer-substring-no-properties beg end) ",")))))
 
 (defun amd--find-file-matching (name)
   "Prompt for a file matching NAME in the project.
@@ -474,9 +512,23 @@ buffer file."
          (amd--define-node-p define-node))))
 
 (defun amd--define-node-p (node)
-  (let ((target (js2-call-node-target node)))
-    (and (js2-call-node-p node)
-         (string= (js2-name-node-name target) "define"))))
+  (when (js2-call-node-p node)
+   (let ((target (js2-call-node-target node)))
+     (string= (js2-name-node-name target) "define"))))
+
+(defun amd--enclosing-scopes (node)
+  "Return a list of the scope chain enclosing NODE."
+  (let ((scope (js2-node-get-enclosing-scope node)))
+    (when scope
+      (cons scope (amd--enclosing-scopes scope)))))
+
+(defun amd--symbol-defined-in-scope-chain-p (symbol node)
+  "Return non-nil if SYMBOL is defined in the chain scope of NODE."
+  (let* ((scopes (amd--enclosing-scopes node))
+         (symbols (-flatten (mapcar (lambda (scope)
+                                      (mapcar #'car (js2-scope-symbol-table scope)))
+                                    scopes))))
+    (-contains-p symbols symbol)))
 
 (defun amd--file-search-regexp ()
   (concat
