@@ -6,7 +6,7 @@
 ;; Keywords: javascript, amd, projectile
 ;; Version: 2.0
 ;; Package: amd-mode
-;; Package-Requires: ((emacs "25") (projectile "0.10.0") (s "1.9.0") (f "0.16.2") (dash "2.5.0") (makey "0.3") (js2-mode "20140114") (js2-refactor "0.6.1"))
+;; Package-Requires: ((emacs "25") (projectile "0.10.0") (s "1.9.0") (f "0.16.2") (seq "2.18") (makey "0.3") (js2-mode "20140114") (js2-refactor "0.6.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -161,22 +161,22 @@ directory."
     (with-temp-buffer
       (apply #'process-file (executable-find "ag") nil t nil
              `(,@amd-ag-arguments
-               ,@(-mapcat (lambda (dir)
-                            (list "--ignore-dir" dir))
-                          amd-ag-ignored-dirs)
-               ,@(-mapcat (lambda (file)
-                            (list "--ignore" file))
-                          amd-ag-ignored-files)
+               ,@(seq-mapcat (lambda (dir)
+                               (list "--ignore-dir" dir))
+                             amd-ag-ignored-dirs)
+               ,@(seq-mapcat (lambda (file)
+                               (list "--ignore" file))
+                             amd-ag-ignored-files)
                ,regexp))
       (goto-char (point-min))
       (while (re-search-forward "^\\(.+\\)$" nil t)
         (push (match-string-no-properties 1) matches)))
-    (let* ((candidates (-remove (lambda (match)
-                               (amd--xref-false-positive match name))
-                             (-map (lambda (match)
-                                     (amd--xref-candidate name match))
-                                   matches)))
-           (xrefs (-map #'amd--make-xref candidates)))
+    (let* ((candidates (seq-remove (lambda (match)
+                                     (amd--xref-false-positive match name))
+                                   (seq-map (lambda (match)
+                                              (amd--xref-candidate name match))
+                                            matches)))
+           (xrefs (seq-map #'amd--make-xref candidates)))
       (if xrefs
           (xref--show-xrefs xrefs nil)
         (message "No reference found")))))
@@ -196,7 +196,7 @@ The MATCH is one output result from the ag search."
     ;; Some minified JS files might match a search. To avoid cluttering the
     ;; search result, we trim the output.
     (when (> (length match) 100)
-      (setq match (concat (-take match 100) "...")))
+      (setq match (concat (seq-take 100 match) "...")))
     (list (cons 'file (expand-file-name (car attrs) (projectile-project-root)))
           (cons 'line (string-to-number (cadr attrs)))
           (cons 'symbol symbol)
@@ -244,10 +244,11 @@ Also appends the filename to the modules list."
                                (file-name-sans-extension
                                 original-file)))
          (file-replace-regexp (amd--file-replace-regexp))
-         (files (-remove-item original-file
-                              (mapcar #'projectile-expand-root
-                                      (projectile-files-with-string original-file-name
-                                                                    (projectile-project-root))))))
+         (files (seq-remove (lambda (file)
+                              (srting= file original-file))
+                            (mapcar #'projectile-expand-root
+                                    (projectile-files-with-string original-file-name
+                                                                  (projectile-project-root))))))
     (call-interactively amd-write-file-function)
     (delete-file original-file)
     (message "Renaming references in project...")
@@ -413,7 +414,7 @@ If FILE-OR-NAME is already imported, does nothing."
                            (intern module-name)
                            (js2-node-at-point))))
     ;; when already loaded under the same name, does nothing.
-    (unless (-contains-p imports module-name)
+    (unless (seq-contains imports module-name)
       (if (or (not already-defined)
               (y-or-n-p (format "Name %s already defined.  Use anyway? "
                                 module-name)))
@@ -523,9 +524,9 @@ Note: This function is mostly a copy/paste from
     (run-hooks 'projectile-find-file-hook)))
 
 (defun amd--current-files-matching (name)
-  (-filter #'(lambda (file)
-               (s-contains? name file))
-           (projectile-current-project-files)))
+  (seq-filter #'(lambda (file)
+                  (s-contains? name file))
+              (projectile-current-project-files)))
 
 (defun amd--file-name (file)
   "Return the name of FILE relative to the project or the current
@@ -594,10 +595,12 @@ buffer file."
 (defun amd--symbol-defined-in-scope-chain-p (symbol node)
   "Return non-nil if SYMBOL is defined in the chain scope of NODE."
   (let* ((scopes (amd--enclosing-scopes node))
-         (symbols (-flatten (mapcar (lambda (scope)
-                                      (mapcar #'car (js2-scope-symbol-table scope)))
-                                    scopes))))
-    (-contains-p symbols symbol)))
+         (symbols (apply #'seq-concatenate
+                         'list
+                         (mapcar (lambda (scope)
+                                   (mapcar #'car (js2-scope-symbol-table scope)))
+                                 scopes))))
+    (seq-contains symbols symbol)))
 
 (defun amd--file-search-regexp (name)
   "Regexp sent to `ag' to search for module NAME references."

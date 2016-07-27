@@ -2,7 +2,7 @@
 
 (package-file "amd-mode.el")
 
-(depends-on "dash")
+(depends-on "seq")
 (depends-on "makey")
 (depends-on "js2-mode")
 (depends-on "js2-refactor")
