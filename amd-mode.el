@@ -49,6 +49,9 @@
 ;; C-S-down: reorder the imported modules or perform
 ;; `js2r-move-line-down`.
 ;;
+;; C-k: `amd-kill-line': Kill the line at point.  When killing a module from the
+;; define module array, remove it from the function arguments as well.
+;;
 ;; When `amd-use-relative-file-name' is set to `T', files are
 ;; imported using relative paths when the imported file is in a
 ;; subdirectory or in the same directory as the current buffer
@@ -223,6 +226,35 @@ Also append it to the modules list."
   (save-excursion
     (amd--guard)
     (amd--import module)))
+
+(defun amd-kill-line ()
+  "Kill the line at point using `js2r-kill'.
+
+When killing a module from the define module array, remove it
+from the function arguments as well."
+  (interactive)
+  (if (and (amd--inside-imports-p)
+           (looking-back "^[\s\t]*")
+           (not (looking-at "[\s\t]*$")))
+      (amd-kill-module)
+    (js2r-kill)))
+
+(defun amd-kill-module ()
+  (save-excursion
+    (back-to-indentation)
+    (amd--remove-module-from-params))
+  (kill-line))
+
+(defun amd--remove-module-from-params ()
+  (let* ((current-node (js2-node-at-point))
+         (function-node (amd--define-function-node))
+         (params (amd--function-node-params function-node))
+         (names (amd--function-node-params function-node))
+         (position (js2-position current-node
+                                 (js2-array-node-elems (js2-node-parent current-node))))
+         (module (nth position names)))
+    (setf names (delete module names))
+    (amd--set-function-params function-node names)))
 
 (defun amd-move-line-up ()
   "When inside the import array, move up the module at point.
@@ -483,10 +515,9 @@ buffer file."
   (makey-key-mode-popup-amd))
 
 (define-key amd-mode-map (kbd "C-c C-a") #'amd-initialize-makey-group)
+(define-key amd-mode-map (kbd "C-k") #'amd-kill-line)
 (define-key amd-mode-map (kbd "<C-S-up>") #'amd-move-line-up)
 (define-key amd-mode-map (kbd "<C-S-down>") #'amd-move-line-down)
-
-
 
 (provide 'amd-mode)
 ;;; amd-mode.el ends here
