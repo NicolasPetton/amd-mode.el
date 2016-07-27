@@ -4,9 +4,9 @@
 ;;
 ;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;; Keywords: javascript, amd, projectile
-;; Version: 1.0
+;; Version: 2.0
 ;; Package: amd-mode
-;; Package-Requires: ((projectile "0.10.0") (ag "0.47")  (s "1.9.0") (f "0.16.2") (dash "2.5.0") (makey "0.3") (js2-mode "20140114") (js2-refactor "0.6.1"))
+;; Package-Requires: ((emacs "25") (projectile "0.10.0") (s "1.9.0") (f "0.16.2") (dash "2.5.0") (makey "0.3") (js2-mode "20140114") (js2-refactor "0.6.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -70,6 +70,7 @@
 (require 's)
 (require 'f)
 (require 'dash)
+(require 'xref)
 
 (defcustom amd-use-relative-file-name nil
   "Use relative file names for new module imports.
@@ -91,6 +92,24 @@ Relative file names are always used."
   "Function used to write files."
   :group 'amd-mode
   :type 'symbol)
+
+(defcustom amd-ag-arguments '("--js" "--noheading")
+  "Default arguments passed to ag."
+  :type 'list
+  :group 'amd-mode)
+
+(defcustom amd-ag-ignored-dirs '("bower_components"
+                              "node_modules"
+                              "build"
+                              "lib")
+  "List of directories to be ignored when performing a search."
+  :type 'list
+  :group 'amd-mode)
+
+(defcustom amd-ag-ignored-files '("*.min.js")
+  "List of files to be ignored when performing a search."
+  :type 'list
+  :group 'amd-mode)
 
 (defvar amd-rewrite-rules-alist '()
   "When importing a file, apply each rule against the file path.
@@ -130,12 +149,62 @@ directory."
   "Find amd references of the buffer's module in the current project."
   (interactive)
   (amd--guard)
-  (let ((ag-ignore-list (-union ag-ignore-list
-                                (append (projectile-ignored-files-rel)
-                                        (projectile-ignored-directories-rel)
-                                        grep-find-ignored-files
-                                        grep-find-ignored-directories))))
-    (ag-regexp (amd--file-search-regexp) (projectile-project-root))))
+  (let* ((name (file-name-nondirectory
+                (file-name-sans-extension
+                 (buffer-file-name)))))
+    (amd--xref-search-references name (amd--file-search-regexp name))))
+
+(defun amd--xref-search-references (name regexp)
+  "Search for references to NAME searching with REGEXP using `ag'."
+  (let ((default-directory (projectile-project-root))
+        matches)
+    (with-temp-buffer
+      (apply #'process-file (executable-find "ag") nil t nil
+             `(,@amd-ag-arguments
+               ,@(-mapcat (lambda (dir)
+                            (list "--ignore-dir" dir))
+                          amd-ag-ignored-dirs)
+               ,@(-mapcat (lambda (file)
+                            (list "--ignore" file))
+                          amd-ag-ignored-files)
+               ,regexp))
+      (goto-char (point-min))
+      (while (re-search-forward "^\\(.+\\)$" nil t)
+        (push (match-string-no-properties 1) matches)))
+    (let* ((candidates (-remove (lambda (match)
+                               (amd--xref-false-positive match name))
+                             (-map (lambda (match)
+                                     (amd--xref-candidate name match))
+                                   matches)))
+           (xrefs (-map #'amd--make-xref candidates)))
+      (if xrefs
+          (xref--show-xrefs xrefs nil)
+        (message "No reference found")))))
+
+(defun amd--make-xref (candidate)
+  "Return a new Xref object built from CANDIDATE."
+  (xref-make (map-elt candidate 'match)
+             (xref-make-file-location (map-elt candidate 'file)
+                                      (map-elt candidate 'line)
+                                      0)))
+
+(defun amd--xref-candidate (symbol match)
+  "Return a candidate alist built from SYMBOL and a raw MATCH result.
+The MATCH is one output result from the ag search."
+  (let* ((attrs (split-string match ":" t))
+         (match (string-trim (mapconcat #'identity (cddr attrs) ":"))))
+    ;; Some minified JS files might match a search. To avoid cluttering the
+    ;; search result, we trim the output.
+    (when (> (length match) 100)
+      (setq match (concat (-take match 100) "...")))
+    (list (cons 'file (expand-file-name (car attrs) (projectile-project-root)))
+          (cons 'line (string-to-number (cadr attrs)))
+          (cons 'symbol symbol)
+          (cons 'match match))))
+
+(defun amd--xref-false-positive (match name)
+  "Return non-nil if MATCH is a false positive for the module NAME."
+  (not (s-contains-p name (alist-get 'match match))))
 
 (defun amd-find-module-at-point ()
   "When on a node, find the module file at point represented by the content of the node."
@@ -530,13 +599,12 @@ buffer file."
                                     scopes))))
     (-contains-p symbols symbol)))
 
-(defun amd--file-search-regexp ()
+(defun amd--file-search-regexp (name)
+  "Regexp sent to `ag' to search for module NAME references."
   (concat
-   "\[\'|\"\]\(.*/\)?"
-   (file-name-nondirectory
-    (file-name-sans-extension
-     (buffer-file-name)))
-   "\[\'|\"\]"))
+   "define\\([^\]]+['|\"](.*/)?"
+   name
+   "['|\"]"))
 
 (defun amd--file-replace-regexp ()
   (concat
