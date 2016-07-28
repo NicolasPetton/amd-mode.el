@@ -71,6 +71,7 @@
 (require 'f)
 (require 'dash)
 (require 'xref)
+(require 'subr-x)
 
 (defcustom amd-use-relative-file-name nil
   "Use relative file names for new module imports.
