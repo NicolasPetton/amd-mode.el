@@ -99,9 +99,9 @@ Relative file names are always used."
   :group 'amd-mode)
 
 (defcustom amd-ag-ignored-dirs '("bower_components"
-                              "node_modules"
-                              "build"
-                              "lib")
+                                 "node_modules"
+                                 "build"
+                                 "lib")
   "List of directories to be ignored when performing a search."
   :type 'list
   :group 'amd-mode)
