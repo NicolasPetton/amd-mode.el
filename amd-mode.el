@@ -246,7 +246,7 @@ Also appends the filename to the modules list."
                                 original-file)))
          (file-replace-regexp (amd--file-replace-regexp))
          (files (seq-remove (lambda (file)
-                              (srting= file original-file))
+                              (string= file original-file))
                             (mapcar #'projectile-expand-root
                                     (projectile-files-with-string original-file-name
                                                                   (projectile-project-root))))))
