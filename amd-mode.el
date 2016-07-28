@@ -149,15 +149,23 @@ directory."
   "Find amd references of the buffer's module in the current project."
   (interactive)
   (amd--guard)
-  (let* ((name (file-name-nondirectory
-                (file-name-sans-extension
-                 (buffer-file-name)))))
-    (amd--xref-search-references name (amd--file-search-regexp name))))
+  (amd--xref-search-references (buffer-file-name)))
 
-(defun amd--xref-search-references (name regexp)
-  "Search for references to NAME searching with REGEXP using `ag'."
-  (let ((default-directory (projectile-project-root))
-        matches)
+(defun amd--xref-search-references (file)
+  "Search for references to the module FILE using `ag'."
+  (let ((matches (amd--find-references file)))
+    (let* ((candidates matches)
+           (xrefs (seq-map #'amd--make-xref candidates)))
+      (if xrefs
+          (xref--show-xrefs xrefs nil)
+        (message "No reference found")))))
+
+(defun amd--find-references (file)
+  "Return a list of reference candidates matching the module FILE."
+  (let* ((name (file-name-nondirectory (file-name-sans-extension file)))
+         (regexp (amd--file-search-regexp name))
+         (default-directory (projectile-project-root))
+         matches)
     (with-temp-buffer
       (apply #'process-file (executable-find "ag") nil t nil
              `(,@amd-ag-arguments
@@ -171,15 +179,11 @@ directory."
       (goto-char (point-min))
       (while (re-search-forward "^\\(.+\\)$" nil t)
         (push (match-string-no-properties 1) matches)))
-    (let* ((candidates (seq-remove (lambda (match)
-                                     (amd--xref-false-positive match name))
-                                   (seq-map (lambda (match)
-                                              (amd--xref-candidate name match))
-                                            matches)))
-           (xrefs (seq-map #'amd--make-xref candidates)))
-      (if xrefs
-          (xref--show-xrefs xrefs nil)
-        (message "No reference found")))))
+    (seq-remove (lambda (match)
+                  (amd--xref-false-positive match name))
+                (seq-map (lambda (match)
+                           (amd--xref-candidate name match))
+                         matches))))
 
 (defun amd--make-xref (candidate)
   "Return a new Xref object built from CANDIDATE."
@@ -244,23 +248,20 @@ Also appends the filename to the modules list."
                                (file-name-sans-extension
                                 original-file)))
          (file-replace-regexp (amd--file-replace-regexp))
-         (files (seq-remove (lambda (file)
-                              (string= file original-file))
-                            (mapcar #'projectile-expand-root
-                                    (projectile-files-with-string original-file-name
-                                                                  (projectile-project-root))))))
+         (files (seq-map (lambda (candidate)
+                           (alist-get 'file candidate))
+                         (amd--find-references original-file-name))))
     (call-interactively amd-write-file-function)
     (delete-file original-file)
     (message "Renaming references in project...")
     (amd--replace-all-file-references file-replace-regexp
-                                   (current-buffer)
-                                   files
-                                   #'amd--inside-imports-p)
+                                      (current-buffer)
+                                      files)
     (when (y-or-n-p "Save all project buffers? ")
       (projectile-save-project-buffers))))
 
-(defun amd--replace-all-file-references (from buffer files &optional condition)
-  "Replace FROM with the AMD name of BUFFER in FILES, if CONDITION returns non-nil.
+(defun amd--replace-all-file-references (from buffer files)
+  "Replace FROM with the AMD name of BUFFER in FILES.
 Replacement is only done in JS files, other files are ignored.
 TO can be a string or a function returning a string."
   (dolist (file files)
@@ -270,15 +271,12 @@ TO can be a string or a function returning a string."
            (amd--replace-references-in-file from
                                             `(lambda ()
                                                (format "%s" (amd--module (amd--buffer-file-name ,buffer))))
-                                            file
-                                            condition)
+                                            file)
          (error (message "Unable to perform replacement in %s" file)))))))
 
-(defun amd--replace-references-in-file (from to file &optional condition)
+(defun amd--replace-references-in-file (from to file)
   (unless (stringp to)
     (setq to (funcall to)))
-  (unless condition
-    (setq condition (lambda () t)))
   (with-current-buffer (find-file-noselect file)
     (save-excursion
       (save-restriction
@@ -286,7 +284,6 @@ TO can be a string or a function returning a string."
         (goto-char (point-min))
         (while (and
                 (re-search-forward from nil t)
-                (funcall condition)
                 (replace-match (concat "\\1" to "\\3"))))))))
 
 (defun amd-import-module (module)
