@@ -208,7 +208,7 @@ The MATCH is one output result from the ag search."
 
 (defun amd--xref-false-positive (match name)
   "Return non-nil if MATCH is a false positive for the module NAME."
-  (not (s-contains-p name (alist-get 'match match))))
+  (not (s-matches-p (format "\\b%s\\b['|\"]" name) (alist-get 'match match))))
 
 (defun amd-find-module-at-point ()
   "When on a node, find the module file at point represented by the content of the node."
