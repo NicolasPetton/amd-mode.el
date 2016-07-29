@@ -400,7 +400,7 @@ Always perform `js2r-move-line-down'."
 
 If FILE-OR-NAME is already imported, does nothing."
   (let* ((imports (amd--imported-modules))
-         (default-module-name (amd--module-name file))
+         (default-module-name (amd--module-name file-or-name))
          (module-name (read-string (concat "Import as ("
                                            default-module-name
                                            "): ")))
