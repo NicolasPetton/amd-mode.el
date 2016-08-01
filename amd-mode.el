@@ -569,8 +569,9 @@ buffer file."
                          file)))))
 
 (defun amd--inside-imports-p ()
-  (or (amd--imports-node-p (js2-node-at-point))
-      (amd--imports-node-p (js2-node-parent (js2-node-at-point)))))
+  (let ((parent (js2-node-parent (js2-node-at-point))))
+   (or (amd--imports-node-p (js2-node-at-point))
+       (and parent (amd--imports-node-p parent)))))
 
 (defun amd--imports-node-p (node)
   (let* ((imports-node node)
