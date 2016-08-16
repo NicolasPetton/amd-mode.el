@@ -1,8 +1,8 @@
-* amd-mode.el [[https://travis-ci.org/NicolasPetton/amd-mode.el][https://travis-ci.org/NicolasPetton/amd-mode.el.svg]]
+* amd-mode.el [![MELPA](https://melpa.org/packages/amd-mode-badge.svg)](https://melpa.org/#/amd-mode)
   
   Minor mode for handling JavaScript AMD module requirements.
   
-  Copyright (C) 2014-2015 Nicolas Petton
+  Copyright (C) 2014-2016 Nicolas Petton
   
   amd-mode.el provides convenience methods and keybindings for handling
   AMD module definitions.
