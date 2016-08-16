@@ -1,4 +1,4 @@
-* amd-mode.el [![MELPA](https://melpa.org/packages/amd-mode-badge.svg)](https://melpa.org/#/amd-mode)
+* amd-mode.el [[https://melpa.org/#/amd-mode][file:https://melpa.org/packages/amd-mode-badge.svg]]
   
   Minor mode for handling JavaScript AMD module requirements.
   
