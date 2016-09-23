@@ -302,7 +302,7 @@ from the function arguments as well."
   (interactive)
   (if (and (amd--inside-imports-p)
            (looking-back "^[\s\t]*")
-           (looking-at "[\s\t]*'"))
+           (looking-at "[\s\t]*['|\"]"))
       (amd-kill-module)
     (js2r-kill)))
 
