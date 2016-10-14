@@ -223,7 +223,8 @@ The MATCH is one output result from the ag search."
   (goto-char (point-min))
   (insert "define([], function() {
 
-});")
+});
+")
   (backward-char 3)
   (js2-indent-line))
 
