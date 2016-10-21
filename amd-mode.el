@@ -6,7 +6,7 @@
 ;; Keywords: javascript, amd, projectile
 ;; Version: 2.0
 ;; Package: amd-mode
-;; Package-Requires: ((emacs "25") (projectile "0.10.0") (s "1.9.0") (f "0.16.2") (seq "2.16") (makey "0.3") (js2-mode "20140114") (js2-refactor "0.6.1"))
+;; Package-Requires: ((emacs "25") (projectile "20161008.47") (s "1.9.0") (f "0.16.2") (seq "2.16") (makey "0.3") (js2-mode "20140114") (js2-refactor "0.6.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -237,7 +237,7 @@ Also appends the filename to the modules list."
     (let ((file (projectile-completing-read
                  "Import file: "
                  (projectile-current-project-files)
-                 (concat (symbol-name (symbol-at-point)) ".js"))))
+                 :initial-input (concat (symbol-name (symbol-at-point)) ".js"))))
       (amd--import file))))
 
 (defun amd-rename-file ()
@@ -517,7 +517,7 @@ Note: This function is mostly a copy/paste from
   (let ((file (projectile-completing-read
                 "Find file: "
                 (projectile-current-project-files)
-                (concat name ".js"))))
+                :initial-input (concat name ".js"))))
     (find-file (expand-file-name file (projectile-project-root)))
     (run-hooks 'projectile-find-file-hook)))
 
