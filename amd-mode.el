@@ -225,7 +225,7 @@ The MATCH is one output result from the ag search."
 
 });
 ")
-  (backward-char 3)
+  (backward-char 5)
   (js2-indent-line))
 
 (defun amd-import-file ()
