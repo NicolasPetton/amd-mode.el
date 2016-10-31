@@ -1,11 +1,11 @@
 Feature: Find module at point
   Background: 
-    Given the buffer is empty
-    When I turn on js2-mode
+    Given I open temp file "bar.js"
+    And I turn on js2-mode
     And I turn on amd-mode
-    And I type "var bar;"
-    And I go to word "bar"
+    And I type "var foo;"
+    And I go to word "foo"
 
   Scenario:
-    When I press "C-c C-a o bar"
-    Then I should be in buffer "bar.js"
+    When I press "C-c C-a ."
+    Then I should be in buffer "foo.js"
