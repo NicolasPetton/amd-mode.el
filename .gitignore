@@ -1,2 +1,3 @@
 .cask
-/test-files/.ecukes-failing-scenarios
+.ecukes-failing-scenarios
+
