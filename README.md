@@ -2,10 +2,10 @@
   
   Minor mode for handling JavaScript AMD module imports.
   
-  Copyright (C) 2014-2016 Nicolas Petton
-  
   amd-mode.el provides convenience methods and keybindings for handling
   AMD module definitions.
+  
+  Mirrored from [https://petton.fr/git/nico/amd-mode.el](https://petton.fr/git/nico/amd-mode.el)
   
   amd-mode.el works with [js2-mode](https://github.com/mooz/js2-mode) and (at the moment) requires to be
   with a [projectile](https://github.com/bbatsov/projectile) project.
@@ -41,3 +41,8 @@ file.
 
 When `amd-always-use-relative-file-name` is set to `t`, files are
 always imported using relative paths.
+
+---
+
+Copyright (C) 2014-2016 Nicolas Petton
+  
