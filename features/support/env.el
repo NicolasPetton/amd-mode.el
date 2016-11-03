@@ -11,6 +11,10 @@
 
 (add-to-list 'load-path amd-mode-root-path)
 
+(defvar test-base-directory default-directory)
+(setq temporary-file-directory
+      (expand-file-name "test-files" test-base-directory))
+
 (require 'amd-mode)
 (require 'js2-mode)
 (require 'espuds)
@@ -20,11 +24,12 @@
 )
 
 (Before
- )
+ (cd test-base-directory))
 
 (After
  ;; After each scenario is run
- )
+ (mapc #'delete-file
+       (directory-files temporary-file-directory t "^bar\.js.+")))
 
 (Teardown
  ;; After when everything has been run

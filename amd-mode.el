@@ -225,7 +225,7 @@ The MATCH is one output result from the ag search."
 
 });
 ")
-  (backward-char 3)
+  (backward-char 5)
   (js2-indent-line))
 
 (defun amd-import-file ()
@@ -237,7 +237,9 @@ Also appends the filename to the modules list."
     (let ((file (projectile-completing-read
                  "Import file: "
                  (projectile-current-project-files)
-                 :initial-input (concat (symbol-name (symbol-at-point)) ".js"))))
+                 :initial-input
+                 (when (symbol-at-point)
+                   (concat (symbol-name (symbol-at-point)) ".js")))))
       (amd--import file))))
 
 (defun amd-rename-file ()

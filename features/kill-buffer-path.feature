@@ -1,6 +1,6 @@
 Feature: Kill buffer path
   Background: 
-    Given I am in file "foo.js"
+    Given I am in file "test-files/bar.js"
     When I turn on js2-mode
     And I turn on amd-mode
 
@@ -9,5 +9,5 @@ Feature: Kill buffer path
     Then I press "C-y"
     Then I should see:
     """
-    'test-files/foo'
+    'test-files/bar'
     """
