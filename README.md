@@ -1,4 +1,4 @@
-# amd-mode.el [![MELPA](https://melpa.org/packages/amd-mode-badge.svg)](https://melpa.org/#/amd-mode) [![Build Status](https://travis-ci.org/NicolasPetton/amd-mode.el.svg?branch=master)](https://travis-ci.org/NicolasPetton/amd-mode.el)
+# amd-mode.el [![MELPA](https://melpa.org/packages/amd-mode-badge.svg)](https://melpa.org/#/amd-mode) [![Build Status](https://travis-ci.org/NicolasPetton/amd-mode.el.svg?branch=master)](https://travis-ci.org/NicolasPetton/amd-mode.el) 
   
   Minor mode for handling JavaScript AMD module definitions.
   
@@ -40,6 +40,11 @@ file.
 
 When `amd-always-use-relative-file-name` is set to `t`, files are
 always imported using relative paths.
+
+## Contributors
+
+- Damien Cassou
+- Syohei YOSHIDA 
 
 ---
 
