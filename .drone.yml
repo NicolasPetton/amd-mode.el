@@ -1,5 +1,5 @@
 build:
-  image: nicolaspetton/emacs
+  image: nicolaspetton/emacs:armhf
   commands:
     - cask install ;
     - cask exec ecukes ;
