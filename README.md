@@ -1,4 +1,4 @@
-# amd-mode.el [![MELPA](https://melpa.org/packages/amd-mode-badge.svg)](https://melpa.org/#/amd-mode) [![Build Status](https://travis-ci.org/NicolasPetton/amd-mode.el.svg?branch=master)](https://travis-ci.org/NicolasPetton/amd-mode.el) 
+# amd-mode.el [![MELPA](https://melpa.org/packages/amd-mode-badge.svg)](https://melpa.org/#/amd-mode) [![Build Status](https://ci.petton.fr/api/badges/nico/amd-mode.el/status.svg)](https://ci.petton.fr/nico/amd-mode.el)
   
   Minor mode for handling JavaScript AMD module definitions.
   
