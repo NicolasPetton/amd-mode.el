@@ -4,5 +4,5 @@
 (package-file "amd-mode.el")
 
 (development
- (depends-on "ecukes")
- (depends-on "espuds"))
+ (depends-on "assess")
+ (depends-on "ert-runner"))
