@@ -2,4 +2,4 @@ build:
   image: nicolaspetton/emacs
   commands:
     - cask install ;
-    - cask exec ecukes ;
+    - ./run-tests.sh
