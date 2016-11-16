@@ -4,7 +4,7 @@
 ;;
 ;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;; Keywords: javascript, amd, projectile
-;; Version: 2.0
+;; Version: 2.7
 ;; Package: amd-mode
 ;; Package-Requires: ((emacs "25") (projectile "20161008.47") (s "1.9.0") (f "0.16.2") (seq "2.16") (makey "0.3") (js2-mode "20140114") (js2-refactor "0.6.1"))
 
