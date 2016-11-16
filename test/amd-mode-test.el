@@ -99,5 +99,5 @@ If BUFFER is nil, use `current-buffer'."
         (should (assess= "I'm in target.js"
                          (substring-no-properties (buffer-string))))))))
 
-(provide 'test-amd-mode)
-;;; test-amd-mode.el ends here
+(provide 'amd-mode-test)
+;;; amd-mode-test.el ends here
