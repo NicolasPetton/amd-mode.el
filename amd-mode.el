@@ -617,7 +617,7 @@ If BUFFER is at the root of the project, return the empty string."
 (defun amd--file-search-regexp (name)
   "Regexp sent to `ag' to search for module NAME references."
   (concat
-   "define\\([^\]]+['|\"](.*/)?"
+   "define\\([^\]\)]+['|\"](.*/)?"
    name
    "['|\"]"))
 
