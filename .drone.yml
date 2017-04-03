@@ -1,5 +1,7 @@
-build:
-  image: nicolaspetton/emacs
-  commands:
-    - cask install ;
-    - ./run-tests.sh
+pipeline:
+  build:
+    image: nicolaspetton/emacs
+    commands:
+      - cask install ;
+      - ./run-tests.sh
+  
