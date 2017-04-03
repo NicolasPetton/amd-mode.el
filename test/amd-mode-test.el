@@ -54,7 +54,7 @@ If BUFFER is nil, use `current-buffer'."
         (setq amd-use-relative-file-name nil)
         (amd--import "sub/foo.js")
         (should (string-match-p
-                 (regexp-quote "define(['sub/foo'], function(foo) {\n")
+                 (regexp-quote "define(['sub/foo'], function(foobar) {\n")
                  (substring-no-properties (buffer-string))))))))
 
 (ert-deftest add-dependency-should-add-a-file-in-parent-dir ()
