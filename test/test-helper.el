@@ -122,5 +122,4 @@ for change."
            (delete-directory ,temp-root t)
            (setq default-directory ,old-dd))))))
 
-(provide 'test-helper)
 ;;; test-helper.el ends here

@@ -28,7 +28,6 @@
 (require 'amd-mode)
 
 (require 'assess)
-(require 'test-helper)
 
 (defun test-amd--prepare-buffer (&optional buffer)
   "Configure BUFFER for javascript and amd-mode.
