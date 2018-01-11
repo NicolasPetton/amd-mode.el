@@ -45,5 +45,5 @@ always imported using relative paths.
 
 ---
 
-Copyright (C) 2014-2016 Nicolas Petton
+Copyright (C) 2014-2018 Nicolas Petton & Damien Cassou
   

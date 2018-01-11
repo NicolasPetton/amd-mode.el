@@ -1,8 +1,8 @@
 ;;; test-amd-mode.el --- tests for amd-mode          -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2016  Damien Cassou
+;; Copyright (C) 2016-2018 Damien Cassou & Nicolas Petton
 
-;; Author: Damien Cassou <damien@cassou.me>
+;; Author: Damien Cassou <damien@cassou.me>, Nicolas Petton <nicolas@petton.fr>
 ;; Keywords:
 
 ;; This program is free software; you can redistribute it and/or modify
