@@ -596,7 +596,8 @@ If BUFFER is at the root of the project, return the empty string."
 (defun amd--define-node-p (node)
   (when (js2-call-node-p node)
    (let ((target (js2-call-node-target node)))
-     (string= (js2-name-node-name target) "define"))))
+     (and (js2-name-node-p target)
+	  (string= (js2-name-node-name target) "define")))))
 
 (defun amd--enclosing-scopes (node)
   "Return a list of the scope chain enclosing NODE."

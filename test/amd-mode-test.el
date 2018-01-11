@@ -85,6 +85,19 @@ If BUFFER is nil, use `current-buffer'."
       (amd-kill-buffer-module)
       (should (assess= "'sub/foo'" (car kill-ring))))))
 
+(ert-deftest amd--define-node-p-on-non-name-nodes ()
+  (with-temp-buffer
+    (insert "[1, // foo
+	2 // bar
+]")
+    (js2-mode)
+    (amd-mode)
+    (js2-parse)
+    ;; place the cursor on the space before the comment (this is not a name
+    ;; node).
+    (goto-char 4)
+    (should-not (amd--define-node-p (js2-node-at-point)))))
+
 (ert-deftest find-module-at-point ()
   (cl-letf (((symbol-function 'projectile-completing-read)
              (lambda (&rest _) "target.js")))
